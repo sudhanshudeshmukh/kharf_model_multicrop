@@ -197,7 +197,7 @@ class KharifModel:
         lulc_layer = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
         slope_layer = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
         
-        path = 'D:/PoCRA/deliverables/Script'
+        path = 'D:/Ref Files'
         output_csv_filename = '/kharif_model_output.csv'
         model_calculator = KharifModelCalculator(path, ws_layer, soil_layer, lulc_layer, slope_layer)
         model_calculator.calculate(output_csv_filename)
