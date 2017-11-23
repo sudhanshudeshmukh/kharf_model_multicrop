@@ -200,7 +200,7 @@ class KharifModel:
         path = 'D:/Ref Files'
         output_csv_filename = '/kharif_model_output.csv'
         model_calculator = KharifModelCalculator(path, ws_layer, soil_layer, lulc_layer, slope_layer)
-        model_calculator.calculate(output_csv_filename)
+        model_calculator.calculate(output_csv_filename,'soyabean',0,182) #This need to be updated with input values
         uri = 'file:///' + path + output_csv_filename + '?delimiter=%s&crs=epsg:32643&xField=%s&yField=%s' % (',', 'X', 'Y')
         kharif_model_output_layer = QgsVectorLayer(uri, 'Kharif Model Output','delimitedtext')
         QgsMapLayerRegistry.instance().addMapLayer(kharif_model_output_layer)
