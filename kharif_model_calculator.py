@@ -56,16 +56,18 @@ class KharifModelCalculator:
 		self.path_Rainfall = path + '/rainfall.csv'
 		
 	
-	def pet_calculation(self):
+	def pet_calculation(self,crop_name):
 		rainfall_csv = open(self.path_Rainfall)
 		self.rain = [int(row["Rainfall"]) for row in csv.DictReader(rainfall_csv)]
 		
 		test_csv = open(self.path_et)
 		a = [float(row["ET0"]) for row in csv.DictReader(test_csv)]
-		test1_csv = open(self.path_kc)
-		Kc = [float(row["Kc_soyabean"]) for row in csv.DictReader(test1_csv)]
-		test1_csv = open(self.path_kc)
-		stage = [int(row["Soyabean_stage"]) for row in csv.DictReader(test1_csv)]
+		Kc=[]
+		stage=[]
+		print (crop_name)
+		for i in range (len(dict_crop[crop_name][0])):
+		    stage.append(dict_crop[crop_name][0][i][0])
+		    Kc.append(dict_crop[crop_name][0][i][1])
 		et0=[]
 		#Computation of ET0 from July to Nov
 		for i in range (0,len(a)):
@@ -90,6 +92,9 @@ class KharifModelCalculator:
 			return i
 		initial_dry = compute_initial_period()
 		d = [0]*initial_dry+ d
+		#To calculate till Nov 30 we are truncating KCs for remaingig duration
+		if(len(d)>len(et0)):
+			d=d[0:len(et0)]
 		if (len (d)<len (self.rain)):
 			d = d + [0]*(len(self.rain)-len(d))
 		elif(len (d)>len (self.rain)):
@@ -98,14 +103,14 @@ class KharifModelCalculator:
 		return pet
 
 
-	def calculate(self, output_csv_filename):
+	def calculate(self, output_csv_filename,crop_name,start_date_index=0,end_date_index=182):
 		csvwrite = open(self.path + output_csv_filename,'w+b')
 		writer = csv.writer(csvwrite)
 		writer.writerow(['X', 'Y','PET-AET','Soil Moisture','Infiltration'])
 		
 		start_time = time.time()
-		count =cn_sum = 0
-		pet = self.pet_calculation()
+		count =cn_sum = 0,0
+		pet = self.pet_calculation(crop_name.lower())
 		xminB =  self.ws_layer.extent().xMinimum()
 		xmaxB = self.ws_layer.extent().xMaximum()
 		yminB = self.ws_layer.extent().yMinimum()
@@ -198,7 +203,7 @@ class KharifModelCalculator:
 						ini_sm_tot, S_swat, Cn_swat, Ia_swat, KS, SM1_before, R_to_second_layer, sec_run_off, SM2_before= 0, 0, 0, 0, 0, 0, 0, 0, 0
 						Swat_RO, infiltration, AET,perc_to_GW = [], [], [],[] 
 						SM1_fraction, layer2_moisture = WP, WP 
-						for i in range (0,len(self.rain)):
+						for i in range (0,end_date_index+1):
 							ini_sm_tot = (SM1_fraction*SM1+layer2_moisture*SM2)*1000
 							S_swat = Smax*(1 - (ini_sm_tot	-WP_depth)/((ini_sm_tot	- WP_depth)+exp(W1 - W2*(ini_sm_tot- WP_depth))))
 							Cn_swat = 25400/float(S_swat+254)
@@ -230,8 +235,8 @@ class KharifModelCalculator:
 							SM2_before = (layer2_moisture*SM2*1000+R_to_second_layer)/SM2/1000
 							perc_to_GW.append(max((SM2_before - FC)*SM2*daily_perc_factor*1000,0))
 							layer2_moisture = min(((SM2_before*SM2*1000- perc_to_GW[i])/SM2/1000),Sat)
-						pet_minus_aet = sum(pet)- sum(AET)
-						writer.writerow([x_i,y_i,pet_minus_aet,ini_sm_tot,sum(infiltration)])
+						pet_minus_aet = sum(pet[start_date_index:end_date_index+1])- sum(AET[start_date_index:end_date_index+1])
+						writer.writerow([x_i,y_i,pet_minus_aet,ini_sm_tot,sum(infiltration[start_date_index:end_date_index+1])])
 		print (ctr)
 		csvwrite.close()
 		print("--- %s seconds ---" % (time.time() - start_time))
