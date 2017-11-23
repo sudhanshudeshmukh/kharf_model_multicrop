@@ -46,6 +46,7 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
         self.soil_layer_browse.clicked.connect(lambda : self.on_browse(self.soil_layer_filename, 'Soil-cover Vector Layer', 'Shapefiles (*.shp)'))
         self.lulc_layer_browse.clicked.connect(lambda : self.on_browse(self.lulc_layer_filename, 'Land-use-land-cover Vector Layer', 'Shapefiles (*.shp)'))
         self.slope_layer_browse.clicked.connect(lambda : self.on_browse(self.slope_layer_filename, 'Slope Raster Layer', 'TIFF files (*.tif *.tiff)'))
+        self.rainfall_csv_browse.clicked.connect(lambda : self.on_browse(self.rainfall_csv_filename, 'Daily Rainfall CSV File', 'CSV files (*.csv)'))
     
     def on_browse(self, lineEdit, caption, fltr):
 		filename = QtGui.QFileDialog.getOpenFileName(self, caption, self.last_path, fltr)
