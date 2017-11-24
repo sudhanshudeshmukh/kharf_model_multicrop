@@ -323,7 +323,7 @@
    <property name="title">
     <string>Output</string>
    </property>
-   <widget class="QGroupBox" name="groupBox_2">
+   <widget class="QGroupBox" name="save_image_group_box">
     <property name="geometry">
      <rect>
       <x>30</x>
@@ -333,7 +333,7 @@
      </rect>
     </property>
     <property name="title">
-     <string>Save As Image</string>
+     <string>Save As Image In</string>
     </property>
     <property name="checkable">
      <bool>true</bool>
@@ -354,7 +354,7 @@
       <string>Browse</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="save_image_dirname">
+    <widget class="QLineEdit" name="save_image_filename">
      <property name="geometry">
       <rect>
        <x>90</x>
@@ -390,7 +390,7 @@
     <property name="title">
      <string>Colour-code intervals for ET-Deficit map :</string>
     </property>
-    <widget class="QPushButton" name="colour_code_intervals_add_button">
+    <widget class="QPushButton" name="colour_code_intervals_split_button">
      <property name="geometry">
       <rect>
        <x>220</x>
@@ -406,7 +406,7 @@
       <string>&gt;&gt; Split</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="colour_code_intervals_remove_button">
+    <widget class="QPushButton" name="colour_code_intervals_merge_button">
      <property name="geometry">
       <rect>
        <x>220</x>
@@ -441,24 +441,35 @@
       <number>-1</number>
      </property>
     </widget>
-    <widget class="QSlider" name="colour_code_intervals_horizontal_slider">
+    <widget class="QLabel" name="label_8">
      <property name="geometry">
       <rect>
-       <x>30</x>
+       <x>20</x>
        <y>40</y>
-       <width>160</width>
+       <width>101</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Split an interval at : </string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="colour_code_intervals_split_value_spin_box">
+     <property name="geometry">
+      <rect>
+       <x>130</x>
+       <y>40</y>
+       <width>42</width>
        <height>22</height>
       </rect>
      </property>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="value">
+      <number>50</number>
      </property>
     </widget>
-    <zorder>colour_code_intervals_add_button</zorder>
-    <zorder>colour_code_intervals_remove_button</zorder>
-    <zorder>colour_code_intervals_list_widget</zorder>
-    <zorder>colour_code_intervals_horizontal_slider</zorder>
-    <zorder>groupBox_2</zorder>
    </widget>
   </widget>
  </widget>

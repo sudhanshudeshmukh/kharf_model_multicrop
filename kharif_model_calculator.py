@@ -14,13 +14,12 @@ import shutil
 from math import exp
 from math import log
 from constants_dicts_lookups import *
-print (dict_lulc)
 
 
 class KharifModelCalculator:
 	"""The actual algorithm for calculating results of the Kharif Model"""
 	
-	def __init__(self, path, ws_layer, soil_layer, lulc_layer, slope_layer):
+	def __init__(self, path, ws_layer, soil_layer, lulc_layer, slope_layer, rainfall_csv_path):
 		self.ws_layer = ws_layer
 		self.soil_layer = soil_layer
 		self.lulc_layer = lulc_layer
@@ -53,7 +52,8 @@ class KharifModelCalculator:
 		self.path_et = path + '/ET0_file.csv'
 		self.path_kc = path + '/KC_file.csv'
 
-		self.path_Rainfall = path + '/rainfall.csv'
+		#~ self.path_Rainfall = path + '/rainfall.csv'
+		self.path_Rainfall = rainfall_csv_path
 		
 	
 	def pet_calculation(self,crop_name):
@@ -127,6 +127,7 @@ class KharifModelCalculator:
 		ctr=0
 		poly_soil=[f for f in self.soil_layer.getFeatures()][0]
 		poly_lulc = [f for f in self.lulc_layer.getFeatures()][0]
+		self.min_pet_minus_aet = self.max_pet_minus_aet = 0
 		#for loop over each point 
 		for x_i in x_List:
 			for y_i in y_List:
@@ -237,6 +238,8 @@ class KharifModelCalculator:
 							layer2_moisture = min(((SM2_before*SM2*1000- perc_to_GW[i])/SM2/1000),Sat)
 						pet_minus_aet = sum(pet[start_date_index:end_date_index+1])- sum(AET[start_date_index:end_date_index+1])
 						writer.writerow([x_i,y_i,pet_minus_aet,ini_sm_tot,sum(infiltration[start_date_index:end_date_index+1])])
+						self.min_pet_minus_aet = min(self.min_pet_minus_aet, pet_minus_aet)
+						self.max_pet_minus_aet = max(self.max_pet_minus_aet, pet_minus_aet)
 		print (ctr)
 		csvwrite.close()
 		print("--- %s seconds ---" % (time.time() - start_time))
