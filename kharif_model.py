@@ -29,7 +29,7 @@ from kharif_model_dialog import KharifModelDialog
 import os.path
 # Import code for the calculation
 from kharif_model_calculator import KharifModelCalculator
-from qgis.core import QgsMapLayerRegistry, QgsVectorLayer, QgsSymbolV2, QgsRendererRangeV2, QgsGraduatedSymbolRendererV2
+from qgis.core import QgsMapLayerRegistry, QgsVectorLayer, QgsSymbolV2, QgsRendererRangeV2, QgsGraduatedSymbolRendererV2, QgsVectorFileWriter
 from constants_dicts_lookups import *
 
 
@@ -197,8 +197,13 @@ class KharifModel:
 		soil_layer = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
 		lulc_layer = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
 		slope_layer = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
+		#~ ws_layer = self.iface.addVectorLayer('C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/Wahegaon_Cluster_Boundary_correct.shp', 'Watershed', 'ogr')
+		#~ soil_layer = self.iface.addVectorLayer('C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/Soil_correct.shp', 'Soil Cover', 'ogr')
+		#~ lulc_layer = self.iface.addVectorLayer('C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/LULC_correct.shp', 'Land-Use-Land-Cover', 'ogr')
+		#~ slope_layer = self.iface.addRasterLayer('C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/Slope.tif', 'Slope')
 		
 		rainfall_csv = self.dlg.rainfall_csv_filename.text()
+		#~ rainfall_csv = 'C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/W2017.csv'
 		
 		crop = self.dlg.crop_combo_box.currentText()
 		
@@ -212,6 +217,7 @@ class KharifModel:
 		
 		
 		path = os.path.dirname(self.dlg.watershed_layer_filename.text())
+		#~ path = 'C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data'
 		output_csv_filename = '/kharif_model_output.csv'
 		model_calculator = KharifModelCalculator(path, ws_layer, soil_layer, lulc_layer, slope_layer, rainfall_csv)
 		model_calculator.calculate(output_csv_filename,crop,start_date_index,end_date_index)
@@ -220,7 +226,7 @@ class KharifModel:
 		
 		
 		graduated_symbol_renderer_range_list = []
-		ET_D_min = model_calculator.min_pet_minus_aet;	ET_D_max = model_calculator.max_pet_minus_aet
+		ET_D_max = model_calculator.max_pet_minus_aet
 		opacity = 1
 		intervals_count = self.dlg.colour_code_intervals_list_widget.count()
 		for i in range(intervals_count):
@@ -241,9 +247,7 @@ class KharifModel:
 		kharif_model_output_layer.setRendererV2(renderer)
 		QgsMapLayerRegistry.instance().addMapLayer(kharif_model_output_layer)
 		
-		
-		#~ QgsMapLayerRegistry.instance().addMapLayer(kharif_model_output_layer)
-		
+		QgsVectorFileWriter.writeAsVectorFormat(kharif_model_output_layer, path+'/kharif_et_deficit.shp', "utf-8", None, "ESRI Shapefile")
 		
 		if self.dlg.save_image_group_box.isChecked():
 			self.iface.mapCanvas.saveAsImage(self.dlg.save_image_filename.text())
