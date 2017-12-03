@@ -20,7 +20,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QDate
+from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QDate, QTimer
 from PyQt4.QtGui import QAction, QIcon, QFileDialog, QColor
 # Initialize Qt resources from file resources.py
 import resources
@@ -249,5 +249,10 @@ class KharifModel:
 		
 		QgsVectorFileWriter.writeAsVectorFormat(kharif_model_output_layer, path+'/kharif_et_deficit.shp', "utf-8", None, "ESRI Shapefile")
 		
+		self.iface.actionHideAllLayers().trigger()
+		self.iface.legendInterface().setLayerVisible(QgsMapLayerRegistry.instance().mapLayersByName('Watershed')[0], True)
+		self.iface.legendInterface().setLayerVisible(QgsMapLayerRegistry.instance().mapLayersByName('Kharif Model Output')[0], True)
+		self.iface.mapCanvas().setExtent(ws_layer.extent())
+			
 		if self.dlg.save_image_group_box.isChecked():
-			self.iface.mapCanvas.saveAsImage(self.dlg.save_image_filename.text())
+			QTimer.singleShot(1000, lambda :	self.iface.mapCanvas().saveAsImage(self.dlg.save_image_filename.text()))
