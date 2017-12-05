@@ -33,30 +33,14 @@ class KharifModelCalculator:
 		self.soil_feature_dict = {f.id(): f for f in soil_layer.getFeatures()}
 		self.lulc_feature_dict = {f.id(): f for f in lulc_layer.getFeatures()}
 
-		#Index on miniwatershed
 		self.index_MINIWSH = QgsSpatialIndex(ws_layer.getFeatures())
-		#~ self.index_MINIWSH = QgsSpatialIndex()
-		#~ for f in self.wsh_feature_dict.values():  
-			#~ self.index_MINIWSH.insertFeature(f)
-
-		#Index on soil map
 		self.index_Soil = QgsSpatialIndex(soil_layer.getFeatures())
-		#~ self.index_Soil = QgsSpatialIndex()
-		#~ for f in self.soil_feature_dict.values():  
-			#~ self.index_Soil.insertFeature(f)
-
-		#Index on LULC
 		self.index_LULC = QgsSpatialIndex(lulc_layer.getFeatures())
-		#~ self.index_LULC = QgsSpatialIndex()
-		#~ for f in self.lulc_feature_dict.values():  
-			#~ self.index_LULC.insertFeature(f)
-
 		
-		#This path need to be changed for files having ET0 and KC lookup
+		# Working Directory path
 		self.path = path
 
 		self.path_et = path + '/ET0_file.csv'
-		self.path_kc = path + '/KC_file.csv'
 
 		#~ self.path_Rainfall = path + '/rainfall.csv'
 		self.path_Rainfall = rainfall_csv_path
@@ -259,7 +243,11 @@ class KharifModelCalculator:
 		start_time = time.time()
 		
 		self.pet_calculation(crop_name.lower())
+		assert len(self.pet) == end_date_index-start_date_index+1, len(self.pet)
+		
 		self.set_output_points()
+		print 'no of points: ', len(self.output_points)
+		
 		self.max_pet_minus_aet = 0;	count = 0
 		for point in self.output_points:
 			if self.get_containing_polygon(self.index_MINIWSH, self.wsh_feature_dict, point) == False:	continue

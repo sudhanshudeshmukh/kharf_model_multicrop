@@ -197,15 +197,16 @@ class KharifModel:
 		soil_layer = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
 		lulc_layer = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
 		slope_layer = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
-		#~ ws_layer = self.iface.addVectorLayer('C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/Wahegaon_Cluster_Boundary_correct.shp', 'Watershed', 'ogr')
-		#~ soil_layer = self.iface.addVectorLayer('C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/Soil_correct.shp', 'Soil Cover', 'ogr')
-		#~ lulc_layer = self.iface.addVectorLayer('C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/LULC_correct.shp', 'Land-Use-Land-Cover', 'ogr')
-		#~ slope_layer = self.iface.addRasterLayer('C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/Slope.tif', 'Slope')
+		#~ ws_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/boundary_Jalamb_Yeulkhed.shp', 'Watershed', 'ogr')
+		#~ soil_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/soil_Jalamb_Yeulkhed.shp', 'Soil Cover', 'ogr')
+		#~ lulc_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/LULC_Jalamb_Yeulkhed.shp', 'Land-Use-Land-Cover', 'ogr')
+		#~ slope_layer = self.iface.addRasterLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/Slope_Jalamb_Yeulkhed.tif', 'Slope')
 		
 		rainfall_csv = self.dlg.rainfall_csv_filename.text()
-		#~ rainfall_csv = 'C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data/W2017.csv'
+		#~ rainfall_csv = 'C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/rainfall.csv'
 		
 		crop = self.dlg.crop_combo_box.currentText()
+		#~ crop = 'soyabean'
 		
 		start_qdate = self.dlg.from_date_edit.date()
 		date_with_index_0 = QDate(start_qdate.year(), 6, 1).dayOfYear()
@@ -217,10 +218,16 @@ class KharifModel:
 		
 		
 		path = os.path.dirname(self.dlg.watershed_layer_filename.text())
-		#~ path = 'C:/Users/Rahul/.qgis2/python/plugins/KharifModel/test/user examples/Wahegaon_Cluster_Data'
+		#~ path = 'C:/Users/Rahul/Desktop/Jalamb_Yeulkhed'
 		output_csv_filename = '/kharif_model_output.csv'
 		model_calculator = KharifModelCalculator(path, ws_layer, soil_layer, lulc_layer, slope_layer, rainfall_csv)
+		
+		#~ model_calculator.calculate(output_csv_filename,crop)
 		model_calculator.calculate(output_csv_filename,crop,start_date_index,end_date_index)
+		
+		#~ QgsMapLayerRegistry.instance().removeMapLayers([ws_layer, soil_layer, lulc_layer, slope_layer])
+		#~ return
+		
 		uri = 'file:///' + path + output_csv_filename + '?delimiter=%s&crs=epsg:32643&xField=%s&yField=%s' % (',', 'X', 'Y')
 		kharif_model_output_layer = QgsVectorLayer(uri, 'Kharif Model Output','delimitedtext')
 		

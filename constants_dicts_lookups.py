@@ -15,7 +15,7 @@ ROOT_LEVEL = 0.5 # Root level for plant
 
 #Dictionary for generic land use types:
 dict_lulc = {
-	'Forest-Forest Blank':'scrub forest',
+	'forest-forest blank':'scrub forest',
 	'forest-deciduous (dry/moist/thorn)-open': 'deciduous open',
 	'agricultural land-crop land-rabi crop': 'agriculture',
 	'forest-scrub forest': 'scrub forest',
