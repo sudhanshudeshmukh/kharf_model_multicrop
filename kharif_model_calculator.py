@@ -11,9 +11,187 @@ import time
 import processing
 import sys
 import shutil
+from collections import OrderedDict
 from math import exp
 from math import log
 from constants_dicts_lookups import *
+
+
+BOUNDARY_LABEL = 'Zones'
+SOIL_LABEL = 'Soil'
+LULC_LABEL = 'Land-Use-Land-Cover'
+SLOPE_LABEL = 'Slope'
+
+CALCULATE_FOR_LULC_TYPES = ['agriculture', 'fallow land']
+
+class Budget:
+	
+	def __init__(self):
+		self.sm, self.runoff, self.infil, self.AET, self.GW_rech = [],[],[],[],[]
+	
+	def summarize(self, PET_sum, start_date_index, end_date_index):
+		self.sm = self.sm[end_date_index]
+		self.runoff = sum(self.runoff[start_date_index:end_date_index+1])
+		self.infil = sum(self.infil[start_date_index:end_date_index+1])
+		self.AET = sum(self.AET[start_date_index:end_date_index+1])
+		self.GW_rech = sum(self.GW_rech[start_date_index:end_date_index+1])
+		self.PET_minus_AET = PET_sum - self.AET
+	
+	def get_PET_minus_AET(self, PET):
+		pass
+	
+class Point:
+	
+	def __init__(self, qgsPoint):
+		self.qgsPoint = qgsPoint
+		self.parent_polygons = {}
+		self.slope = None
+		self.budget = Budget()
+	
+	def run_model(self, rain, PET, PET_sum, start_date_index, end_date_index):
+		self.setup_for_daily_computations()
+		
+		self.SM1_fraction = self.layer2_moisture = self.WP
+		
+		for day in range (0,end_date_index+1):
+			self.primary_runoff(day, rain)
+			self.aet(day, PET)
+			self.percolation_below_root_zone(day)
+			self.secondary_runoff(day)
+			self.percolation_to_GW(day)
+		
+		self.budget.summarize(PET_sum, start_date_index, end_date_index)
+	
+	def setup_for_daily_computations(self):
+		"""
+		"""
+		poly_soil = self.parent_polygons[SOIL_LABEL]
+		texture = poly_soil[TEX].lower()
+		Ksat = round(float(dict_SoilContent[texture][7]),4)
+		self.Sat = round(float(dict_SoilContent[texture][6]),4)
+		self.WP = round(float(dict_SoilContent[texture][4]),4)
+		self.FC = round(float(dict_SoilContent[texture][5]),4)
+		depth_value = float(dict_SoilDep[poly_soil[Depth].lower()])
+		
+		lu_Type = dict_lulc[self.parent_polygons[LULC_LABEL][Desc].lower()]
+		
+		HSG =  dict_SoilContent[texture][0]
+		cn_val = int(dict_RO[lu_Type][HSG])
+		
+		Sat_depth = self.Sat * depth_value*1000
+		self.WP_depth = self.WP*depth_value*1000
+		FC_depth = self.FC*depth_value*1000
+		if(depth_value <= ROOT_LEVEL): #thin soil layer
+			self.SM1 = depth_value - 0.01;	self.SM2 = 0.01
+		else :
+			self.SM1 = ROOT_LEVEL;	self.SM2 = depth_value - ROOT_LEVEL 
+		
+		cn_s = cn_val
+		cn3 = (23*cn_val)/(10+0.13*cn_val)
+		if (self.slope > 5.0):
+			cn_s = (((cn3-cn_val)/float(3))*(1-2*exp(-13.86*self.slope * 0.01))) + cn_val
+		cn1_s = cn_s - 20*(100-cn_s)/float(100-cn_s+exp(2.533-0.0636*(100-cn_s)))
+		cn3_s = cn_s *exp(0.00673*(100-cn_s))
+		
+		self.Smax = 25.4 * (1000/float(cn1_s) - 10)
+		S3 = 25.4 * (1000/float(cn3_s) - 10)
+		self.W2 = (log((FC_depth- self.WP_depth)/(1-float(S3/self.Smax)) - (FC_depth - self.WP_depth )) - log ((Sat_depth - self.WP_depth)/(1-2.54/self.Smax) - (Sat_depth - self.WP_depth)))/((Sat_depth- self.WP_depth) - (FC_depth - self.WP_depth))
+		self.W1 = log((FC_depth- self.WP_depth)/(1- S3/self.Smax) - (FC_depth - self.WP_depth)) + self.W2 * (FC_depth -self.WP_depth)
+		
+		TT_perc = (Sat_depth- FC_depth)/Ksat	#SWAT equation 2:3.2.4
+		self.daily_perc_factor = 1 - exp(-24 / TT_perc)	#SWAT equation 2:3.2.3
+		
+		self.depletion_factor = 0.5
+	
+	def primary_runoff(self, day, rain):
+		"""
+		Retention parameter 'S_swat' using SWAT equation 2:1.1.6
+		Curve Number for the day 'Cn_swat' using SWAT equation 2:1.1.11
+		Initial abstractions (surface storage,interception and infiltration prior to runoff)
+			'Ia_swat' derived approximately as recommended by SWAT
+		Primary Runoff 'Swat_RO' using SWAT equation 2:1.1.1
+		"""
+		self.budget.sm.append((self.SM1_fraction * self.SM1 + self.layer2_moisture * self.SM2) * 1000)
+		self.SW = self.budget.sm[-1] - self.WP_depth
+		S_swat = self.Smax*(1 - self.SW/(self.SW + exp(self.W1 - self.W2 * self.SW)))
+		
+		Cn_swat = 25400/float(S_swat+254)
+		Ia_swat = 0.2 * S_swat
+		if(rain[day] > Ia_swat):
+			self.budget.runoff.append(((rain[day]-Ia_swat)**2)/(rain[day] + 0.8*S_swat))
+		else:
+			self.budget.runoff.append(0)
+		self.budget.infil.append(rain[day] - self.budget.runoff[day])
+		assert len(self.budget.runoff) == day+1, (self.budget.runoff, day)
+		assert len(self.budget.infil) == day+1
+	
+	def aet(self, day, PET):
+		"""
+		Water Stress Coefficient 'KS' using FAO Irrigation and Drainage Paper 56, page 167 and
+			page 169 equation 84
+		Actual Evapotranspiration 'AET' using FAO Irrigation and Drainage Paper 56, page 6 and 
+			page 161 equation 81
+		"""
+		if (self.SM1_fraction < self.WP):
+			KS= 0 
+		elif (self.SM1_fraction > (self.FC *(1- self.depletion_factor) + self.depletion_factor * self.WP)):
+			KS = 1
+		else :	
+			KS = (self.SM1_fraction - self.WP)/(self.FC - self.WP) /(1- self.depletion_factor)
+		self.budget.AET.append( KS * PET[day] )
+	
+	def percolation_below_root_zone(self, day):
+		"""
+		Calculate soil moisture (fraction) 'SM1_before' as the one after infiltration and (then) AET occur,
+		but before percolation starts below root-zone. Percolation below root-zone starts only if
+		'SM1_before' is more than field capacity and the soil below root-zone is not saturated,i.e.
+		'layer2_moisture' is less than saturation. When precolation occurs it is derived as
+		the minimum of the maximum possible percolation (using SWAT equation 2:3.2.3) and
+		the amount available in the root-zone for percolation.
+		"""
+		self.SM1_before = (self.SM1_fraction*self.SM1 +((self.budget.infil[day]-self.budget.AET[day])/float(1000)))/self.SM1
+		if (self.SM1_before < self.FC):
+			self.R_to_second_layer =0
+		elif (self.layer2_moisture < self.Sat) :
+			self.R_to_second_layer = min((self.Sat - self.layer2_moisture) * self.SM2 * 1000,
+										 (self.SM1_before - self.FC) * self.SM1 * 1000 * self.daily_perc_factor)
+		else :
+			self.R_to_second_layer = 0
+		self.SM2_before = (self.layer2_moisture*self.SM2*1000 + self.R_to_second_layer)/self.SM2/1000
+	
+	def secondary_runoff(self, day):
+		"""
+		
+		"""
+		if (((self.SM1_before*self.SM1 - self.R_to_second_layer/1000)/self.SM1) > self.Sat):
+			sec_run_off= (((self.SM1_before*self.SM1 - self.R_to_second_layer/1000)/self.SM1) - self.WP) *0.1*1000
+		else:
+			sec_run_off = 0
+		self.SM1_fraction = min((self.SM1_before*self.SM1*1000 - self.R_to_second_layer)/self.SM1/1000,self.Sat)
+	
+	def percolation_to_GW(self, day):
+		"""
+		
+		"""
+		self.budget.GW_rech.append(max((self.SM2_before - self.FC)*self.SM2*self.daily_perc_factor*1000,0))
+		self.layer2_moisture = min(((self.SM2_before*self.SM2*1000- self.budget.GW_rech[day])/self.SM2/1000),self.Sat)
+	
+
+class VectorLayer:
+	
+	def __init__(self, layer, name=''):
+		self.layer = layer
+		self.name = name
+		self.feature_dict = {f.id(): f for f in layer.getFeatures()}
+		self.index = QgsSpatialIndex(layer.getFeatures())
+	
+	def get_polygon_containing_point(self, point):
+		intersector_ids = self.index.intersects( QgsRectangle( point.qgsPoint, point.qgsPoint ) )
+		for intersector_id in intersector_ids:
+			polygon = self.feature_dict[intersector_id]
+			if (polygon.geometry().contains(point.qgsPoint)):
+				return polygon
+		return None
 
 
 class KharifModelCalculator:
@@ -21,35 +199,25 @@ class KharifModelCalculator:
 	The actual algorithm for calculating results of the Kharif Model
 	"""
 	
-	
-	
-	def __init__(self, path, ws_layer, soil_layer, lulc_layer, slope_layer, rainfall_csv_path):
-		self.ws_layer = ws_layer
-		self.soil_layer = soil_layer
-		self.lulc_layer = lulc_layer
-		self.slope_layer = slope_layer
+	def __init__(self, path, boundary_layer, soil_layer, lulc_layer, slope_layer, rainfall_csv_path):
+		self.boundary_layer = VectorLayer(boundary_layer, BOUNDARY_LABEL)
+		self.soil_layer = VectorLayer(soil_layer, SOIL_LABEL)
+		self.lulc_layer = VectorLayer(lulc_layer, LULC_LABEL)
+		zone_polygon_ids = self.boundary_layer.feature_dict.keys()
+		self.zone_points_dict = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
 		
-		self.wsh_feature_dict = {f.id(): f for f in ws_layer.getFeatures()}
-		self.soil_feature_dict = {f.id(): f for f in soil_layer.getFeatures()}
-		self.lulc_feature_dict = {f.id(): f for f in lulc_layer.getFeatures()}
-
-		self.index_MINIWSH = QgsSpatialIndex(ws_layer.getFeatures())
-		self.index_Soil = QgsSpatialIndex(soil_layer.getFeatures())
-		self.index_LULC = QgsSpatialIndex(lulc_layer.getFeatures())
+		self.slope_layer = slope_layer
 		
 		# Working Directory path
 		self.path = path
 
 		self.path_et = path + '/ET0_file.csv'
 
-		#~ self.path_Rainfall = path + '/rainfall.csv'
-		self.path_Rainfall = rainfall_csv_path
-		
-	
-	def pet_calculation(self,crop_name):
-		rainfall_csv = open(self.path_Rainfall)
+		#~ rainfall_csv_path = path + '/rainfall.csv'
+		rainfall_csv = open(rainfall_csv_path)
 		self.rain = [int(row["Rainfall"]) for row in csv.DictReader(rainfall_csv)]
-		
+	
+	def pet_calculation(self, crop_name):
 		test_csv = open(self.path_et)
 		a = [float(row["ET0"]) for row in csv.DictReader(test_csv)]
 		Kc=[]
@@ -89,184 +257,148 @@ class KharifModelCalculator:
 			d = d + [0]*(len(self.rain)-len(d))
 		elif(len (d)>len (self.rain)):
 			self.rain = self.rain + [0]*(len(d)-len(self.rain))		
-		self.pet = [et0[i]*d[i] for i in range (0,len(d))]
-		#~ print 'pet : ', self.pet
+		return [et0[i]*d[i] for i in range (0,len(d))]
 	
-	def get_containing_polygon(self, index, feature_dict, point):
-		intersectors = index.intersects( QgsRectangle( point, point ) )
-		for intersector in intersectors:
-			polygon = feature_dict[intersector]
-			if (polygon.geometry().contains(point)):
-				return polygon
-		return False
-	
-	def set_output_points(self):
-		xminB =  self.ws_layer.extent().xMinimum()
-		xmaxB = self.ws_layer.extent().xMaximum()
-		yminB = self.ws_layer.extent().yMinimum()
-		ymaxB = self.ws_layer.extent().yMaximum()
-		print 'boundary min, max : ' , xminB, xmaxB, yminB, ymaxB
-		def frange(start,end,step):
-			i = start
-			while i<=end :
-				yield i
-				i = i+step
-		x_List = [x for x in frange(xminB,xmaxB,STEP)]
-		y_List = [x for x in frange(yminB,ymaxB,STEP)]
-		print len(x_List)
-		print len (y_List)
-		self.output_points = [QgsPoint(x,y)	for x in x_List	for y in y_List]	
-		
-	def setup_for_daily_computations(self, point):
-		"""
-		"""
-		poly_soil = self.get_containing_polygon(self.index_Soil, self.soil_feature_dict, point)
-		texture = poly_soil[TEX].lower()
-		Ksat = round(float(dict_SoilContent[texture][7]),4)
-		self.Sat = round(float(dict_SoilContent[texture][6]),4)
-		self.WP = round(float(dict_SoilContent[texture][4]),4)
-		self.FC = round(float(dict_SoilContent[texture][5]),4)
-		depth_value = float(dict_SoilDep[poly_soil[Depth].lower()])
-		
-		poly_lulc = self.get_containing_polygon(self.index_LULC, self.lulc_feature_dict, point)
-		lu_Type = dict_lulc[poly_lulc[Desc].lower()]
-		
-		if (lu_Type != 'agriculture' and lu_Type != 'fallow land'):	return False
-		
-		HSG =  dict_SoilContent[texture][0]
-		cn_val = int(dict_RO[lu_Type][HSG])
-		
-		slope_cat = self.slope_layer.dataProvider().identify(point, QgsRaster.IdentifyFormatValue).results()[1] # Slope of point
-		
-		Sat_depth = self.Sat * depth_value*1000
-		self.WP_depth = self.WP*depth_value*1000
-		FC_depth = self.FC*depth_value*1000
-		if(depth_value <= ROOT_LEVEL): #thin soil layer
-			self.SM1 = depth_value - 0.01;	self.SM2 = 0.01
-		else :
-			self.SM1 = ROOT_LEVEL;	self.SM2 = depth_value - ROOT_LEVEL 
-		
-		cn_s = cn_val
-		cn3 = (23*cn_val)/(10+0.13*cn_val)
-		if (slope_cat > 5.0):
-			cn_s = (((cn3-cn_val)/float(3))*(1-2*exp(-13.86*slope_cat * 0.01))) + cn_val
-		cn1_s = cn_s - 20*(100-cn_s)/float(100-cn_s+exp(2.533-0.0636*(100-cn_s)))
-		cn3_s = cn_s *exp(0.00673*(100-cn_s))
-		
-		self.Smax = 25.4 * (1000/float(cn1_s) - 10)
-		S3 = 25.4 * (1000/float(cn3_s) - 10)
-		self.W2 = (log((FC_depth- self.WP_depth)/(1-float(S3/self.Smax)) - (FC_depth - self.WP_depth )) - log ((Sat_depth - self.WP_depth)/(1-2.54/self.Smax) - (Sat_depth - self.WP_depth)))/((Sat_depth- self.WP_depth) - (FC_depth - self.WP_depth))
-		self.W1 = log((FC_depth- self.WP_depth)/(1- S3/self.Smax) - (FC_depth - self.WP_depth)) + self.W2 * (FC_depth -self.WP_depth)
-		
-		TT_perc = (Sat_depth- FC_depth)/Ksat	#SWAT equation 2:3.2.4
-		self.daily_perc_factor = 1 - exp(-24 / TT_perc)	#SWAT equation 2:3.2.3
-		
-		self.depletion_factor = 0.5
-	
-	def primary_runoff(self, day):
-		"""
-		Retention parameter 'S_swat' using SWAT equation 2:1.1.6
-		Curve Number for the day 'Cn_swat' using SWAT equation 2:1.1.11
-		Initial abstractions (surface storage,interception and infiltration prior to runoff)
-			'Ia_swat' derived approximately as recommended by SWAT
-		Primary Runoff 'Swat_RO' using SWAT equation 2:1.1.1
-		"""
-		
-		self.ini_sm_tot = (self.SM1_fraction * self.SM1 + self.layer2_moisture * self.SM2) * 1000
-		self.SW = self.ini_sm_tot - self.WP_depth
-		self.S_swat = self.Smax*(1 - self.SW/(self.SW + exp(self.W1 - self.W2 * self.SW)))
-		
-		self.Cn_swat = 25400/float(self.S_swat+254)
-		Ia_swat = 0.2 * self.S_swat
-		if(self.rain[day] > Ia_swat):
-			self.Swat_RO.append(((self.rain[day]-Ia_swat)**2)/(self.rain[day] + 0.8*self.S_swat))
+	def set_output_points(self, input_points_filename=None):
+		if input_points_filename is None:
+			xminB =  self.boundary_layer.layer.extent().xMinimum()
+			xmaxB = self.boundary_layer.layer.extent().xMaximum()
+			yminB = self.boundary_layer.layer.extent().yMinimum()
+			ymaxB = self.boundary_layer.layer.extent().yMaximum()
+			print 'boundary min, max : ' , xminB, xmaxB, yminB, ymaxB
+			def frange(start,end,step):
+				i = start
+				while i<=end :
+					yield i
+					i = i+step
+			x_List = [x for x in frange(xminB,xmaxB,STEP)]
+			y_List = [x for x in frange(yminB,ymaxB,STEP)]
+			print len(x_List)
+			print len (y_List)
 		else:
-			self.Swat_RO.append(0)
-		self.infiltration.append(self.rain[day]-self.Swat_RO[day])
+			# Read from file
+			pass
+		self.output_points = [Point(QgsPoint(x,y))	for x in x_List	for y in y_List]
+		print 'no of points : ', len(self.output_points)
 	
-	def aet(self, day):
-		"""
-		Water Stress Coefficient 'KS' using FAO Irrigation and Drainage Paper 56, page 167 and
-			page 169 equation 84
-		Actual Evapotranspiration 'AET' using FAO Irrigation and Drainage Paper 56, page 6 and 
-			page 161 equation 81
-		"""
-		if (self.SM1_fraction < self.WP):
-			KS= 0 
-		elif (self.SM1_fraction > (self.FC *(1- self.depletion_factor) + self.depletion_factor * self.WP)):
-			KS = 1
-		else :	
-			KS = (self.SM1_fraction - self.WP)/(self.FC - self.WP) /(1- self.depletion_factor)
-		self.AET.append( KS * self.pet[day] )
+	def filter_out_points_outside_boundary(self):
+		filtered_points = []
+		count = 0
+		for point in self.output_points:
+			count += 1
+			if count != 0 and count%100 == 0:	print 'filtering : ', count
+			polygon = self.boundary_layer.get_polygon_containing_point(point)
+			if polygon is not None:
+				point.parent_polygons[BOUNDARY_LABEL] = polygon
+				self.zone_points_dict[polygon.id()].append(point)
+				filtered_points.append(point)
+		self.output_points = filtered_points
 	
-	def percolation_below_root_zone(self, day):
-		"""
-		Calculate soil moisture (fraction) 'SM1_before' as the one after infiltration and (then) AET occur,
-		but before percolation starts below root-zone. Percolation below root-zone starts only if
-		'SM1_before' is more than field capacity and the soil below root-zone is not saturated,i.e.
-		'layer2_moisture' is less than saturation. When precolation occurs it is derived as
-		the minimum of the maximum possible percolation (using SWAT equation 2:3.2.3) and
-		the amount available in the root-zone for percolation.
-		"""
-		self.SM1_before = (self.SM1_fraction*self.SM1 +((self.infiltration[day]-self.AET[day])/float(1000)))/self.SM1
-		if (self.SM1_before < self.FC):
-			self.R_to_second_layer =0
-		elif (self.layer2_moisture < self.Sat) :
-			self.R_to_second_layer = min((self.Sat - self.layer2_moisture) * self.SM2 * 1000,
-										 (self.SM1_before - self.FC) * self.SM1 * 1000 * self.daily_perc_factor)
-		else :
-			self.R_to_second_layer = 0
-		self.SM2_before = (self.layer2_moisture*self.SM2*1000 + self.R_to_second_layer)/self.SM2/1000
+	def set_container_polygon_of_points_for_layers(self, polygon_vector_layers):
+		for layer in polygon_vector_layers:
+			for point in self.output_points:
+				point.parent_polygons[layer.name] = layer.get_polygon_containing_point(point)
 	
-	def secondary_runoff(self, day):
-		"""
-		
-		"""
-		if (((self.SM1_before*self.SM1 - self.R_to_second_layer/1000)/self.SM1) > self.Sat):
-			sec_run_off= (((self.SM1_before*self.SM1 - self.R_to_second_layer/1000)/self.SM1) - self.WP) *0.1*1000
-		else:
-			sec_run_off = 0
-		self.SM1_fraction = min((self.SM1_before*self.SM1*1000 - self.R_to_second_layer)/self.SM1/1000,self.Sat)
+	def filter_out_points_by_lulc_type(self):
+		filtered_points = []
+		for point in self.output_points:
+			lulc_type = dict_lulc[point.parent_polygons[LULC_LABEL][Desc].lower()]
+			if lulc_type in CALCULATE_FOR_LULC_TYPES:
+				filtered_points.append(point)
+			else:
+				self.zone_points_dict[point.parent_polygons[BOUNDARY_LABEL].id()].remove(point)
+		self.output_points = filtered_points
 	
-	def percolation_to_GW(self, day):
-		"""
-		
-		"""
-		self.perc_to_GW.append(max((self.SM2_before - self.FC)*self.SM2*self.daily_perc_factor*1000,0))
-		self.layer2_moisture = min(((self.SM2_before*self.SM2*1000- self.perc_to_GW[day])/self.SM2/1000),self.Sat)
+	def set_slope_at_points(self):
+		for point in self.output_points:
+			point.slope = self.slope_layer.dataProvider().identify(
+							point.qgsPoint, QgsRaster.IdentifyFormatValue).results()[1]
 	
-	def calculate(self, output_csv_filename,crop_name,start_date_index=0,end_date_index=182):
-		csvwrite = open(self.path + output_csv_filename,'w+b')
+	def output_point_results_to_csv(self, pointwise_output_csv_filename):
+		csvwrite = open(self.path + pointwise_output_csv_filename,'w+b')
 		writer = csv.writer(csvwrite)
 		writer.writerow(['X', 'Y','PET-AET','Soil Moisture','Infiltration'])
+		for point in self.output_points:
+			if not point.parent_polygons[BOUNDARY_LABEL]:	continue
+			writer.writerow([point.qgsPoint.x(), point.qgsPoint.y(), point.budget.PET_minus_AET, point.budget.sm, point.budget.infil])
+		csvwrite.close()
+	
+	def compute_zonewise_budget(self):
+		self.zonewise_budgets = OrderedDict()
+		for zone_id in self.zone_points_dict:
+			zone_points = self.zone_points_dict[zone_id]
+			self.zonewise_budgets[zone_id] = OrderedDict()
+			no_of_soil_type_points = {}
+			for soil_type in self.soil_types:
+				soil_type_points = filter(lambda point:	point.parent_polygons[SOIL_LABEL][TEX].lower() == soil_type, zone_points)
+				no_of_soil_type_points[soil_type] = len(soil_type_points)
+				if no_of_soil_type_points[soil_type] == 0:	continue
+				
+				zb = self.zonewise_budgets[zone_id][soil_type] = Budget()
+				zb.sm = sum([p.budget.sm	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.runoff = sum([p.budget.runoff	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.infil = sum([p.budget.infil	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.AET = sum([p.budget.AET	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.GW_rech = sum([p.budget.GW_rech	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.PET_minus_AET = sum([p.budget.PET_minus_AET	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+			
+			zb = Budget()
+			zbs = self.zonewise_budgets[zone_id];	no_of_zone_points = len(zone_points)
+			zb.sm = sum([zbs[st].sm * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.runoff = sum([zbs[st].runoff * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.infil = sum([zbs[st].infil * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.AET = sum([zbs[st].AET * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.GW_rech = sum([zbs[st].GW_rech * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.PET_minus_AET = sum([zbs[st].PET_minus_AET * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			self.zonewise_budgets[zone_id]['zone'] = zb
+	
+	def output_zonewise_budget_to_csv(self, zonewise_budget_csv_filename, PET_sum, rain_sum):
+		csvwrite = open(self.path + zonewise_budget_csv_filename,'w+b')
+		writer = csv.writer(csvwrite)
+		writer.writerow(['']+['zone-'+str(ID)+'-'+st	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['Rainfall'] + [rain_sum	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['Runoff'] + [self.zonewise_budgets[ID][st].runoff	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['Infiltration'] + [self.zonewise_budgets[ID][st].infil	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['Soil Moisture'] + [self.zonewise_budgets[ID][st].sm	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['GW Recharge'] + [self.zonewise_budgets[ID][st].GW_rech	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['AET'] + [self.zonewise_budgets[ID][st].AET	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['PET'] + [PET_sum	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['Deficit(PET-AET)'] + [self.zonewise_budgets[ID][st].PET_minus_AET	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		csvwrite.close()
+	
+	def calculate(self, 
+					crop_name,
+					pointwise_output_csv_filename,
+					zonewise_budget_csv_filename,
+					start_date_index=0,
+					end_date_index=182,
+					input_points_filename=None
+				):
 		
 		start_time = time.time()
 		
-		self.pet_calculation(crop_name.lower())
-		assert len(self.pet) == end_date_index-start_date_index+1, len(self.pet)
+		PET = self.pet_calculation(crop_name.lower())
+		PET_sum = sum(PET[start_date_index:end_date_index+1])
+		rain_sum = sum(self.rain[start_date_index:end_date_index+1])
+		self.set_output_points(input_points_filename)
+		self.filter_out_points_outside_boundary()
+		self.set_container_polygon_of_points_for_layers([self.soil_layer, self.lulc_layer])
+		print self.zone_points_dict
+		self.filter_out_points_by_lulc_type()
+		print self.zone_points_dict
+		self.soil_types = set([point.parent_polygons[SOIL_LABEL][TEX].lower()	for point in self.output_points])
+		self.set_slope_at_points()
 		
-		self.set_output_points()
-		print 'no of points: ', len(self.output_points)
-		
-		self.max_pet_minus_aet = 0;	count = 0
+		count = 0
 		for point in self.output_points:
-			if self.get_containing_polygon(self.index_MINIWSH, self.wsh_feature_dict, point) == False:	continue
-			if self.setup_for_daily_computations(point) == False:	continue
-			self.ini_sm_tot = self.S_swat = self.Cn_swat = self.Ia_swat = self.KS = self.SM1_before = self.R_to_second_layer = self.sec_run_off = self.SM2_before = 0
-			self.Swat_RO, self.infiltration, self.AET, self.perc_to_GW = [], [], [],[] 
-			self.SM1_fraction = self.layer2_moisture = self.WP
 			count += 1
-			#~ if count > 1 :	break
 			if count != 0 and count%100 == 0:	print count
-			for day in range (0,end_date_index+1):
-				self.primary_runoff(day)
-				self.aet(day)
-				self.percolation_below_root_zone(day)
-				self.secondary_runoff(day)
-				self.percolation_to_GW(day)
-			pet_minus_aet = sum(self.pet[start_date_index:end_date_index+1])- sum(self.AET[start_date_index:end_date_index+1])
-			writer.writerow([point.x(),point.y(), pet_minus_aet,self.ini_sm_tot,sum(self.infiltration[start_date_index:end_date_index+1])])
-			self.max_pet_minus_aet = max(self.max_pet_minus_aet, pet_minus_aet)
-		csvwrite.close()
+			point.run_model(self.rain, PET, PET_sum, start_date_index, end_date_index)
+		
+		self.output_point_results_to_csv(pointwise_output_csv_filename)
+		
+		self.compute_zonewise_budget()
+		self.output_zonewise_budget_to_csv(zonewise_budget_csv_filename, PET_sum, rain_sum)
+		
 		print("--- %s seconds ---" % (time.time() - start_time))
 		print("done")

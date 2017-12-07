@@ -193,11 +193,11 @@ class KharifModel:
 		if self.dlg.exec_() == QFileDialog.Rejected:	return
 		
 		# Load input layers
-		ws_layer = self.iface.addVectorLayer(self.dlg.watershed_layer_filename.text(), 'Watershed', 'ogr')
+		boundary_layer = self.iface.addVectorLayer(self.dlg.watershed_layer_filename.text(), 'Watershed', 'ogr')
 		soil_layer = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
 		lulc_layer = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
 		slope_layer = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
-		#~ ws_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/boundary_Jalamb_Yeulkhed.shp', 'Watershed', 'ogr')
+		#~ boundary_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/boundary_Jalamb_Yeulkhed.shp', 'Watershed', 'ogr')
 		#~ soil_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/soil_Jalamb_Yeulkhed.shp', 'Soil Cover', 'ogr')
 		#~ lulc_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/LULC_Jalamb_Yeulkhed.shp', 'Land-Use-Land-Cover', 'ogr')
 		#~ slope_layer = self.iface.addRasterLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/Slope_Jalamb_Yeulkhed.tif', 'Slope')
@@ -216,24 +216,25 @@ class KharifModel:
 		
 		interval_points = [int(self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')[0])	for i in range(1,self.dlg.colour_code_intervals_list_widget.count())]
 		
-		
 		path = os.path.dirname(self.dlg.watershed_layer_filename.text())
 		#~ path = 'C:/Users/Rahul/Desktop/Jalamb_Yeulkhed'
-		output_csv_filename = '/kharif_model_output.csv'
-		model_calculator = KharifModelCalculator(path, ws_layer, soil_layer, lulc_layer, slope_layer, rainfall_csv)
+		pointwise_output_csv_filename = '/kharif_model_pointwise_output.csv'
+		zonewise_budget_csv_filename = '/kharif_model_zonewise_budget.csv'
+		model_calculator = KharifModelCalculator(path, boundary_layer, soil_layer, lulc_layer, slope_layer, rainfall_csv)
 		
 		#~ model_calculator.calculate(output_csv_filename,crop)
-		model_calculator.calculate(output_csv_filename,crop,start_date_index,end_date_index)
+		model_calculator.calculate(crop, pointwise_output_csv_filename, zonewise_budget_csv_filename, start_date_index, end_date_index)
 		
 		#~ QgsMapLayerRegistry.instance().removeMapLayers([ws_layer, soil_layer, lulc_layer, slope_layer])
 		#~ return
 		
-		uri = 'file:///' + path + output_csv_filename + '?delimiter=%s&crs=epsg:32643&xField=%s&yField=%s' % (',', 'X', 'Y')
+		uri = 'file:///' + path + pointwise_output_csv_filename + '?delimiter=%s&crs=epsg:32643&xField=%s&yField=%s' % (',', 'X', 'Y')
 		kharif_model_output_layer = QgsVectorLayer(uri, 'Kharif Model Output','delimitedtext')
 		
 		
 		graduated_symbol_renderer_range_list = []
-		ET_D_max = model_calculator.max_pet_minus_aet
+		print model_calculator.output_points[0].budget.AET
+		ET_D_max = max([point.budget.PET_minus_AET	for point in model_calculator.output_points])
 		opacity = 1
 		intervals_count = self.dlg.colour_code_intervals_list_widget.count()
 		for i in range(intervals_count):
@@ -259,7 +260,7 @@ class KharifModel:
 		self.iface.actionHideAllLayers().trigger()
 		self.iface.legendInterface().setLayerVisible(QgsMapLayerRegistry.instance().mapLayersByName('Watershed')[0], True)
 		self.iface.legendInterface().setLayerVisible(QgsMapLayerRegistry.instance().mapLayersByName('Kharif Model Output')[0], True)
-		self.iface.mapCanvas().setExtent(ws_layer.extent())
+		self.iface.mapCanvas().setExtent(boundary_layer.extent())
 			
 		if self.dlg.save_image_group_box.isChecked():
 			QTimer.singleShot(1000, lambda :	self.iface.mapCanvas().saveAsImage(self.dlg.save_image_filename.text()))
