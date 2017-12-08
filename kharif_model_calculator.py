@@ -117,6 +117,7 @@ class Point:
 		
 		Cn_swat = 25400/float(S_swat+254)
 		Ia_swat = 0.2 * S_swat
+		#~ print 'len(rain), day : ', len(rain), day
 		if(rain[day] > Ia_swat):
 			self.budget.runoff.append(((rain[day]-Ia_swat)**2)/(rain[day] + 0.8*S_swat))
 		else:
@@ -205,6 +206,7 @@ class KharifModelCalculator:
 		self.lulc_layer = VectorLayer(lulc_layer, LULC_LABEL)
 		zone_polygon_ids = self.boundary_layer.feature_dict.keys()
 		self.zone_points_dict = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
+		print 'zone_points_dict : ', self.zone_points_dict
 		
 		self.slope_layer = slope_layer
 		
@@ -216,6 +218,7 @@ class KharifModelCalculator:
 		#~ rainfall_csv_path = path + '/rainfall.csv'
 		rainfall_csv = open(rainfall_csv_path)
 		self.rain = [int(row["Rainfall"]) for row in csv.DictReader(rainfall_csv)]
+		print 'len(rain) = ', len(self.rain)
 	
 	def pet_calculation(self, crop_name):
 		test_csv = open(self.path_et)
@@ -344,6 +347,7 @@ class KharifModelCalculator:
 			
 			zb = Budget()
 			zbs = self.zonewise_budgets[zone_id];	no_of_zone_points = len(zone_points)
+			if no_of_zone_points == 0:	continue
 			zb.sm = sum([zbs[st].sm * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
 			zb.runoff = sum([zbs[st].runoff * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
 			zb.infil = sum([zbs[st].infil * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
