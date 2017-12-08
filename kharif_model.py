@@ -258,9 +258,10 @@ class KharifModel:
 		QgsVectorFileWriter.writeAsVectorFormat(kharif_model_output_layer, path+'/kharif_et_deficit.shp', "utf-8", None, "ESRI Shapefile")
 		
 		self.iface.actionHideAllLayers().trigger()
-		self.iface.legendInterface().setLayerVisible(QgsMapLayerRegistry.instance().mapLayersByName('Watershed')[0], True)
-		self.iface.legendInterface().setLayerVisible(QgsMapLayerRegistry.instance().mapLayersByName('Kharif Model Output')[0], True)
+		self.iface.legendInterface().setLayerVisible(boundary_layer, True)
+		self.iface.legendInterface().setLayerVisible(kharif_model_output_layer	, True)
 		self.iface.mapCanvas().setExtent(boundary_layer.extent())
+		self.iface.mapCanvas().mapRenderer().setDestinationCrs(boundary_layer.crs())
 			
 		if self.dlg.save_image_group_box.isChecked():
 			QTimer.singleShot(1000, lambda :	self.iface.mapCanvas().saveAsImage(self.dlg.save_image_filename.text()))
