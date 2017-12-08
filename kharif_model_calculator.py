@@ -206,7 +206,7 @@ class KharifModelCalculator:
 		self.lulc_layer = VectorLayer(lulc_layer, LULC_LABEL)
 		zone_polygon_ids = self.boundary_layer.feature_dict.keys()
 		self.zone_points_dict = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
-		print 'zone_points_dict : ', self.zone_points_dict
+		#~ print 'zone_points_dict : ', self.zone_points_dict
 		
 		self.slope_layer = slope_layer
 		
@@ -387,9 +387,9 @@ class KharifModelCalculator:
 		self.set_output_points(input_points_filename)
 		self.filter_out_points_outside_boundary()
 		self.set_container_polygon_of_points_for_layers([self.soil_layer, self.lulc_layer])
-		print self.zone_points_dict
+		#~ print self.zone_points_dict
 		self.filter_out_points_by_lulc_type()
-		print self.zone_points_dict
+		#~ print self.zone_points_dict
 		self.soil_types = set([point.parent_polygons[SOIL_LABEL][TEX].lower()	for point in self.output_points])
 		self.set_slope_at_points()
 		
