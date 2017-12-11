@@ -29,13 +29,19 @@ class Budget:
 	def __init__(self):
 		self.sm, self.runoff, self.infil, self.AET, self.GW_rech = [],[],[],[],[]
 	
-	def summarize(self, PET_sum, start_date_index, end_date_index):
-		self.sm = self.sm[end_date_index]
-		self.runoff = sum(self.runoff[start_date_index:end_date_index+1])
-		self.infil = sum(self.infil[start_date_index:end_date_index+1])
-		self.AET = sum(self.AET[start_date_index:end_date_index+1])
-		self.GW_rech = sum(self.GW_rech[start_date_index:end_date_index+1])
-		self.PET_minus_AET = PET_sum - self.AET
+	def summarize(self, PET_sum, PET_sum_cropend, start_date_index, end_date_index,crop_end_index):
+		self.sm_crop_end = self.sm[crop_end_index]	
+ 		self.sm_monsoon_end = self.sm[end_date_index]
+		self.runoff_crop_end = sum(self.runoff[start_date_index:crop_end_index+1]) 		
+		self.runoff_monsoon_end = sum(self.runoff[start_date_index:end_date_index+1])
+		self.infil_crop_end = sum(self.infil[start_date_index:crop_end_index+1])
+		self.infil_monsoon_end = sum(self.infil[start_date_index:end_date_index+1])
+		self.AET_crop_end = sum(self.AET[start_date_index:crop_end_index+1])
+		self.AET_monsoon_end = sum(self.AET[start_date_index:end_date_index+1])
+		self.GW_rech_crop_end = sum(self.GW_rech[start_date_index:crop_end_index+1])
+		self.GW_rech_monsoon_end = sum(self.GW_rech[start_date_index:end_date_index+1])
+		self.PET_minus_AET_monsoon_end = PET_sum - self.AET_monsoon_end
+		self.PET_minus_AET_crop_end= PET_sum_cropend - self.AET_crop_end
 	
 	def get_PET_minus_AET(self, PET):
 		pass
@@ -48,19 +54,19 @@ class Point:
 		self.slope = None
 		self.budget = Budget()
 	
-	def run_model(self, rain, PET, PET_sum, start_date_index, end_date_index):
+	def run_model(self, rain, PET, PET_sum, PET_sum_cropend, start_date_index, end_date_index,crop_end_index):
 		self.setup_for_daily_computations()
 		
 		self.SM1_fraction = self.layer2_moisture = self.WP
 		
-		for day in range (0,end_date_index+1):
+		for day in range (0,max(end_date_index,crop_end_index)+1):
 			self.primary_runoff(day, rain)
 			self.aet(day, PET)
 			self.percolation_below_root_zone(day)
 			self.secondary_runoff(day)
 			self.percolation_to_GW(day)
 		
-		self.budget.summarize(PET_sum, start_date_index, end_date_index)
+		self.budget.summarize(PET_sum, PET_sum_cropend, start_date_index, end_date_index,crop_end_index)
 	
 	def setup_for_daily_computations(self):
 		"""
@@ -232,8 +238,11 @@ class KharifModelCalculator:
 		et0=[]
 		#Computation of ET0 from July to Nov
 		for i in range (0,len(a)):
-			if (i in [0,3,5]):
+			if (i in [0,3,5,10]):
 				c = [a[i]]*30
+				et0.extend(c)
+			elif (i in [9]):
+				c = [a[i]]*28
 				et0.extend(c)
 			else:
 				c = [a[i]]*31
@@ -253,14 +262,15 @@ class KharifModelCalculator:
 			return i
 		initial_dry = compute_initial_period()
 		d = [0]*initial_dry+ d
-		#To calculate till Nov 30 we are truncating KCs for remaingig duration
-		if(len(d)>len(et0)):
-			d=d[0:len(et0)]
-		if (len (d)<len (self.rain)):
+		#To handle long kharif crop 
+		kc_len=len(d)
+		if(kc_len<=183):
 			d = d + [0]*(len(self.rain)-len(d))
-		elif(len (d)>len (self.rain)):
-			self.rain = self.rain + [0]*(len(d)-len(self.rain))		
-		return [et0[i]*d[i] for i in range (0,len(d))]
+		elif(kc_len>183):
+			self.rain = self.rain + [0]*(len(d)-len(self.rain))
+		et0=et0[0:len(d)]
+		#To calculate till Nov 30 we are truncating KCs for remaingig duration
+		return ([et0[i]*d[i] for i in range (0,len(d))] ,kc_len-1)
 	
 	def set_output_points(self, input_points_filename=None):
 		if input_points_filename is None:
@@ -320,10 +330,10 @@ class KharifModelCalculator:
 	def output_point_results_to_csv(self, pointwise_output_csv_filename):
 		csvwrite = open(self.path + pointwise_output_csv_filename,'w+b')
 		writer = csv.writer(csvwrite)
-		writer.writerow(['X', 'Y','PET-AET','Soil Moisture','Infiltration'])
+		writer.writerow(['X', 'Y','PET-AET','Soil Moisture','Infiltration', 'Runoff', 'GW Recharge'])
 		for point in self.output_points:
 			if not point.parent_polygons[BOUNDARY_LABEL]:	continue
-			writer.writerow([point.qgsPoint.x(), point.qgsPoint.y(), point.budget.PET_minus_AET, point.budget.sm, point.budget.infil])
+			writer.writerow([point.qgsPoint.x(), point.qgsPoint.y(), point.budget.PET_minus_AET_crop_end, point.budget.sm_crop_end, point.budget.infil_monsoon_end, point.budget.runoff_monsoon_end, point.budget.GW_rech_monsoon_end])
 		csvwrite.close()
 	
 	def compute_zonewise_budget(self):
@@ -338,36 +348,36 @@ class KharifModelCalculator:
 				if no_of_soil_type_points[soil_type] == 0:	continue
 				
 				zb = self.zonewise_budgets[zone_id][soil_type] = Budget()
-				zb.sm = sum([p.budget.sm	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
-				zb.runoff = sum([p.budget.runoff	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
-				zb.infil = sum([p.budget.infil	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
-				zb.AET = sum([p.budget.AET	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
-				zb.GW_rech = sum([p.budget.GW_rech	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
-				zb.PET_minus_AET = sum([p.budget.PET_minus_AET	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.sm_crop_end = sum([p.budget.sm_crop_end	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.runoff_monsoon_end = sum([p.budget.runoff_monsoon_end	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.infil_monsoon_end = sum([p.budget.infil_monsoon_end	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.AET_crop_end = sum([p.budget.AET_crop_end	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.GW_rech_monsoon_end = sum([p.budget.GW_rech_monsoon_end	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
+				zb.PET_minus_AET_crop_end = sum([p.budget.PET_minus_AET_crop_end	for p in soil_type_points]) / no_of_soil_type_points[soil_type]
 			
 			zb = Budget()
 			zbs = self.zonewise_budgets[zone_id];	no_of_zone_points = len(zone_points)
 			if no_of_zone_points == 0:	continue
-			zb.sm = sum([zbs[st].sm * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
-			zb.runoff = sum([zbs[st].runoff * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
-			zb.infil = sum([zbs[st].infil * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
-			zb.AET = sum([zbs[st].AET * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
-			zb.GW_rech = sum([zbs[st].GW_rech * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
-			zb.PET_minus_AET = sum([zbs[st].PET_minus_AET * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.sm_crop_end = sum([zbs[st].sm_crop_end * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.runoff_monsoon_end = sum([zbs[st].runoff_monsoon_end * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.infil_monsoon_end = sum([zbs[st].infil_monsoon_end * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.AET_crop_end = sum([zbs[st].AET_crop_end * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.GW_rech_monsoon_end = sum([zbs[st].GW_rech_monsoon_end * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
+			zb.PET_minus_AET_crop_end = sum([zbs[st].PET_minus_AET_crop_end * no_of_soil_type_points[soil_type]	for st in zbs]) / no_of_zone_points
 			self.zonewise_budgets[zone_id]['zone'] = zb
 	
-	def output_zonewise_budget_to_csv(self, zonewise_budget_csv_filename, PET_sum, rain_sum):
+	def output_zonewise_budget_to_csv(self, zonewise_budget_csv_filename, PET_sum_cropend, rain_sum):
 		csvwrite = open(self.path + zonewise_budget_csv_filename,'w+b')
 		writer = csv.writer(csvwrite)
 		writer.writerow(['']+['zone-'+str(ID)+'-'+st	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
 		writer.writerow(['Rainfall'] + [rain_sum	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
-		writer.writerow(['Runoff'] + [self.zonewise_budgets[ID][st].runoff	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
-		writer.writerow(['Infiltration'] + [self.zonewise_budgets[ID][st].infil	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
-		writer.writerow(['Soil Moisture'] + [self.zonewise_budgets[ID][st].sm	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
-		writer.writerow(['GW Recharge'] + [self.zonewise_budgets[ID][st].GW_rech	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
-		writer.writerow(['AET'] + [self.zonewise_budgets[ID][st].AET	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
-		writer.writerow(['PET'] + [PET_sum	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
-		writer.writerow(['Deficit(PET-AET)'] + [self.zonewise_budgets[ID][st].PET_minus_AET	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['Runoff in Monsoon'] + [self.zonewise_budgets[ID][st].runoff	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['Infiltration in Monsoon'] + [self.zonewise_budgets[ID][st].infil	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['Soil Moisture Crop end'] + [self.zonewise_budgets[ID][st].sm	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['GW Recharge in Monsoon'] + [self.zonewise_budgets[ID][st].GW_rech	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['AET'] + [self.zonewise_budgets[ID][st].AET_crop_end	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['PET'] + [PET_sum_cropend	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
+		writer.writerow(['Deficit(PET-AET)'] + [self.zonewise_budgets[ID][st].PET_minus_AET_crop_end	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
 		csvwrite.close()
 	
 	def calculate(self, 
@@ -381,8 +391,9 @@ class KharifModelCalculator:
 		
 		start_time = time.time()
 		
-		PET = self.pet_calculation(crop_name.lower())
+		PET,crop_end_index = self.pet_calculation(crop_name.lower())
 		PET_sum = sum(PET[start_date_index:end_date_index+1])
+		PET_sum_cropend=sum(PET[start_date_index:crop_end_index+1])
 		rain_sum = sum(self.rain[start_date_index:end_date_index+1])
 		self.set_output_points(input_points_filename)
 		self.filter_out_points_outside_boundary()
@@ -397,12 +408,12 @@ class KharifModelCalculator:
 		for point in self.output_points:
 			count += 1
 			if count != 0 and count%100 == 0:	print count
-			point.run_model(self.rain, PET, PET_sum, start_date_index, end_date_index)
+			point.run_model(self.rain, PET, PET_sum, PET_sum_cropend, start_date_index, end_date_index,crop_end_index)
 		
 		self.output_point_results_to_csv(pointwise_output_csv_filename)
 		
 		self.compute_zonewise_budget()
-		self.output_zonewise_budget_to_csv(zonewise_budget_csv_filename, PET_sum, rain_sum)
+		self.output_zonewise_budget_to_csv(zonewise_budget_csv_filename, PET_sum_cropend, rain_sum)
 		
 		print("--- %s seconds ---" % (time.time() - start_time))
 		print("done")

@@ -233,8 +233,8 @@ class KharifModel:
 		
 		
 		graduated_symbol_renderer_range_list = []
-		print model_calculator.output_points[0].budget.AET
-		ET_D_max = max([point.budget.PET_minus_AET	for point in model_calculator.output_points])
+		print model_calculator.output_points[0].budget.AET_crop_end
+		ET_D_max = max([point.budget.PET_minus_AET_crop_end	for point in model_calculator.output_points])
 		opacity = 1
 		intervals_count = self.dlg.colour_code_intervals_list_widget.count()
 		for i in range(intervals_count):
