@@ -48,6 +48,7 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 		self.watershed_layer_browse.clicked.connect(lambda : self.on_browse(self.watershed_layer_filename, 'Watershed Vector Layer', 'Shapefiles (*.shp)'))
 		self.soil_layer_browse.clicked.connect(lambda : self.on_browse(self.soil_layer_filename, 'Soil-cover Vector Layer', 'Shapefiles (*.shp)'))
 		self.lulc_layer_browse.clicked.connect(lambda : self.on_browse(self.lulc_layer_filename, 'Land-use-land-cover Vector Layer', 'Shapefiles (*.shp)'))
+		self.cadestral_layer_browse.clicked.connect(lambda : self.on_browse(self.cadestral_layer_filename, 'Cadestral Map Vector Layer', 'Shapefiles (*.shp)'))
 		self.slope_layer_browse.clicked.connect(lambda : self.on_browse(self.slope_layer_filename, 'Slope Raster Layer', 'TIFF files (*.tif *.tiff)'))
 		self.rainfall_csv_browse.clicked.connect(lambda : self.on_browse(self.rainfall_csv_filename, 'Daily Rainfall CSV File', 'CSV files (*.csv)'))
 		self.save_image_browse.clicked.connect(lambda : self.on_browse(self.save_image_filename, 'Save As Image In Folder', 'PNG files (*.png)', True))
@@ -59,10 +60,8 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 
 	def on_browse(self, lineEdit, caption, fltr, folder=False):
 		if folder:
-			print 'h'
 			path = QtGui.QFileDialog.getSaveFileName(self, caption, self.last_path, '.png')
 		else:
-			print 'h2'
 			path = QtGui.QFileDialog.getOpenFileName(self, caption, self.last_path, fltr)
 		lineEdit.setText(path)
 		self.last_path = os.path.dirname(path)

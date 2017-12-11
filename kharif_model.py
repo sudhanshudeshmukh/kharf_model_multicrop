@@ -196,10 +196,12 @@ class KharifModel:
 		boundary_layer = self.iface.addVectorLayer(self.dlg.watershed_layer_filename.text(), 'Watershed', 'ogr')
 		soil_layer = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
 		lulc_layer = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
+		cadestral_layer = self.iface.addVectorLayer(self.dlg.cadestral_layer_filename.text(), 'Cadestral Map', 'ogr')
 		slope_layer = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
 		#~ boundary_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/boundary_Jalamb_Yeulkhed.shp', 'Watershed', 'ogr')
 		#~ soil_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/soil_Jalamb_Yeulkhed.shp', 'Soil Cover', 'ogr')
 		#~ lulc_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/LULC_Jalamb_Yeulkhed.shp', 'Land-Use-Land-Cover', 'ogr')
+		#~ cadestral_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/Revenue_Jalamb_Yeulkhed.shp', 'Cadestral Map', 'ogr')
 		#~ slope_layer = self.iface.addRasterLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/Slope_Jalamb_Yeulkhed.tif', 'Slope')
 		
 		rainfall_csv = self.dlg.rainfall_csv_filename.text()
@@ -220,10 +222,11 @@ class KharifModel:
 		#~ path = 'C:/Users/Rahul/Desktop/Jalamb_Yeulkhed'
 		pointwise_output_csv_filename = '/kharif_model_pointwise_output.csv'
 		zonewise_budget_csv_filename = '/kharif_model_zonewise_budget.csv'
-		model_calculator = KharifModelCalculator(path, boundary_layer, soil_layer, lulc_layer, slope_layer, rainfall_csv)
+		cadestral_vulnerability_csv_filename = '/kharif_model_cadestral_vulnerability.csv'
+		model_calculator = KharifModelCalculator(path, boundary_layer, soil_layer, lulc_layer, cadestral_layer, slope_layer, rainfall_csv)
 		
 		#~ model_calculator.calculate(output_csv_filename,crop)
-		model_calculator.calculate(crop, pointwise_output_csv_filename, zonewise_budget_csv_filename, start_date_index, end_date_index)
+		model_calculator.calculate(crop, pointwise_output_csv_filename, zonewise_budget_csv_filename, cadestral_vulnerability_csv_filename, start_date_index, end_date_index)
 		
 		#~ QgsMapLayerRegistry.instance().removeMapLayers([ws_layer, soil_layer, lulc_layer, slope_layer])
 		#~ return

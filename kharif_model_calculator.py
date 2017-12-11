@@ -21,6 +21,7 @@ BOUNDARY_LABEL = 'Zones'
 SOIL_LABEL = 'Soil'
 LULC_LABEL = 'Land-Use-Land-Cover'
 SLOPE_LABEL = 'Slope'
+CADESTRAL_LABEL = 'Cadestral'
 
 CALCULATE_FOR_LULC_TYPES = ['agriculture', 'fallow land']
 
@@ -44,7 +45,7 @@ class Point:
 	
 	def __init__(self, qgsPoint):
 		self.qgsPoint = qgsPoint
-		self.parent_polygons = {}
+		self.container_polygons = {}
 		self.slope = None
 		self.budget = Budget()
 	
@@ -65,7 +66,7 @@ class Point:
 	def setup_for_daily_computations(self):
 		"""
 		"""
-		poly_soil = self.parent_polygons[SOIL_LABEL]
+		poly_soil = self.container_polygons[SOIL_LABEL]
 		texture = poly_soil[TEX].lower()
 		Ksat = round(float(dict_SoilContent[texture][7]),4)
 		self.Sat = round(float(dict_SoilContent[texture][6]),4)
@@ -73,7 +74,7 @@ class Point:
 		self.FC = round(float(dict_SoilContent[texture][5]),4)
 		depth_value = float(dict_SoilDep[poly_soil[Depth].lower()])
 		
-		lu_Type = dict_lulc[self.parent_polygons[LULC_LABEL][Desc].lower()]
+		lu_Type = dict_lulc[self.container_polygons[LULC_LABEL][Desc].lower()]
 		
 		HSG =  dict_SoilContent[texture][0]
 		cn_val = int(dict_RO[lu_Type][HSG])
@@ -200,10 +201,11 @@ class KharifModelCalculator:
 	The actual algorithm for calculating results of the Kharif Model
 	"""
 	
-	def __init__(self, path, boundary_layer, soil_layer, lulc_layer, slope_layer, rainfall_csv_path):
+	def __init__(self, path, boundary_layer, soil_layer, lulc_layer, cadestral_layer, slope_layer, rainfall_csv_path):
 		self.boundary_layer = VectorLayer(boundary_layer, BOUNDARY_LABEL)
 		self.soil_layer = VectorLayer(soil_layer, SOIL_LABEL)
 		self.lulc_layer = VectorLayer(lulc_layer, LULC_LABEL)
+		self.cadestral_layer = VectorLayer(cadestral_layer, CADESTRAL_LABEL)
 		zone_polygon_ids = self.boundary_layer.feature_dict.keys()
 		self.zone_points_dict = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
 		#~ print 'zone_points_dict : ', self.zone_points_dict
@@ -262,6 +264,13 @@ class KharifModelCalculator:
 			self.rain = self.rain + [0]*(len(d)-len(self.rain))		
 		return [et0[i]*d[i] for i in range (0,len(d))]
 	
+	def filter_out_cadestral_plots_outside_boundary(self):
+		QgsGeometryAnalyzer().dissolve(self.boundary_layer, 'temp.shp')
+		dissolved_boundary_layer = QgsVectorLayer('temp.shp', 'dissolved boundary', 'ogr')
+		for polygon_id in self.cadestral_layer.feature_dict:
+			if not self.cadestral_layer.feature_dict[polygon_id].intersects(dissolved_boundary_layer):
+				del self.cadestral_layer.feature_dict[polygon_id]
+	
 	def set_output_points(self, input_points_filename=None):
 		if input_points_filename is None:
 			xminB =  self.boundary_layer.layer.extent().xMinimum()
@@ -292,25 +301,39 @@ class KharifModelCalculator:
 			if count != 0 and count%100 == 0:	print 'filtering : ', count
 			polygon = self.boundary_layer.get_polygon_containing_point(point)
 			if polygon is not None:
-				point.parent_polygons[BOUNDARY_LABEL] = polygon
+				point.container_polygons[BOUNDARY_LABEL] = polygon
 				self.zone_points_dict[polygon.id()].append(point)
 				filtered_points.append(point)
 		self.output_points = filtered_points
 	
 	def set_container_polygon_of_points_for_layers(self, polygon_vector_layers):
 		for layer in polygon_vector_layers:
-			for point in self.output_points:
-				point.parent_polygons[layer.name] = layer.get_polygon_containing_point(point)
+			if layer.name == CADESTRAL_LABEL:
+				for point in self.output_points:
+					polygon = layer.get_polygon_containing_point(point)
+					point.container_polygons[layer.name] = polygon
+					self.cadestral_points_dict[polygon.id()].append(point)
+			else:
+				for point in self.output_points:
+					point.container_polygons[layer.name] = layer.get_polygon_containing_point(point)
 	
 	def filter_out_points_by_lulc_type(self):
 		filtered_points = []
 		for point in self.output_points:
-			lulc_type = dict_lulc[point.parent_polygons[LULC_LABEL][Desc].lower()]
+			lulc_type = dict_lulc[point.container_polygons[LULC_LABEL][Desc].lower()]
 			if lulc_type in CALCULATE_FOR_LULC_TYPES:
 				filtered_points.append(point)
 			else:
-				self.zone_points_dict[point.parent_polygons[BOUNDARY_LABEL].id()].remove(point)
+				self.zone_points_dict[point.container_polygons[BOUNDARY_LABEL].id()].remove(point)
 		self.output_points = filtered_points
+	
+	def add_points_for_empty_cadestral_plots(self):
+		for polygon_id in self.cadestral_layer.feature_dict:
+			if len(self.cadestral_points_dict[polygon_id]) == 0:
+				point = Point(self.cadestral_layer.feature_dict[polygon_id].geometry().centroid())
+				point.container_polygons[CADESTRAL_LABEL] = self.cadestral_points_dict[polygon_id]
+				self.cadestral_points_dict[polygon_id].append(point)
+				self.output_points.append(point)
 	
 	def set_slope_at_points(self):
 		for point in self.output_points:
@@ -322,7 +345,7 @@ class KharifModelCalculator:
 		writer = csv.writer(csvwrite)
 		writer.writerow(['X', 'Y','PET-AET','Soil Moisture','Infiltration'])
 		for point in self.output_points:
-			if not point.parent_polygons[BOUNDARY_LABEL]:	continue
+			if not point.container_polygons[BOUNDARY_LABEL]:	continue
 			writer.writerow([point.qgsPoint.x(), point.qgsPoint.y(), point.budget.PET_minus_AET, point.budget.sm, point.budget.infil])
 		csvwrite.close()
 	
@@ -333,7 +356,7 @@ class KharifModelCalculator:
 			self.zonewise_budgets[zone_id] = OrderedDict()
 			no_of_soil_type_points = {}
 			for soil_type in self.soil_types:
-				soil_type_points = filter(lambda point:	point.parent_polygons[SOIL_LABEL][TEX].lower() == soil_type, zone_points)
+				soil_type_points = filter(lambda point:	point.container_polygons[SOIL_LABEL][TEX].lower() == soil_type, zone_points)
 				no_of_soil_type_points[soil_type] = len(soil_type_points)
 				if no_of_soil_type_points[soil_type] == 0:	continue
 				
@@ -370,10 +393,23 @@ class KharifModelCalculator:
 		writer.writerow(['Deficit(PET-AET)'] + [self.zonewise_budgets[ID][st].PET_minus_AET	for ID in self.zonewise_budgets	for st in self.zonewise_budgets[ID]])
 		csvwrite.close()
 	
+	def compute_and_output_cadestral_vulnerability_to_csv(self, cadestral_vulnerability_csv_filename):
+		plot_vulnerability_dict = {}
+		for polygon_id in self.cadestral_layer.feature_dict:
+			plot_vulnerability_dict[polygon_id] = \
+				sum([p.budget.PET_minus_AET	for p in self.cadestral_points_dict[polygon_id]]) / len(self.cadestral_points_dict[polygon_id])
+		sorted_keys = sorted(plot_vulnerability_dict.keys(), key=lambda ID:	plot_vulnerability_dict[ID], reverse=True)
+		csvwrite = open(self.path + zonewise_budget_csv_filename,'w+b')
+		writer = csv.writer(csvwrite)
+		writer.writerow(['Plot ID', 'Vulnerability'])
+		for key in sorted_keys:	writer.writerow([key, plot_vulnerability_dict[key]])
+		csvwrite.close()
+	
 	def calculate(self, 
 					crop_name,
 					pointwise_output_csv_filename,
 					zonewise_budget_csv_filename,
+					cadestral_vulnerability_csv_filename,
 					start_date_index=0,
 					end_date_index=182,
 					input_points_filename=None
@@ -384,14 +420,16 @@ class KharifModelCalculator:
 		PET = self.pet_calculation(crop_name.lower())
 		PET_sum = sum(PET[start_date_index:end_date_index+1])
 		rain_sum = sum(self.rain[start_date_index:end_date_index+1])
-		self.set_output_points(input_points_filename)
+		
+		self.generate_output_points_grid(input_points_filename)
 		self.filter_out_points_outside_boundary()
+		self.filter_out_cadestral_plots_outside_boundary()
+		self.set_container_polygon_of_points_for_layers([self.cadestral_layer])
+		self.add_points_for_empty_cadestral_plots()
 		self.set_container_polygon_of_points_for_layers([self.soil_layer, self.lulc_layer])
-		#~ print self.zone_points_dict
 		self.filter_out_points_by_lulc_type()
-		#~ print self.zone_points_dict
-		self.soil_types = set([point.parent_polygons[SOIL_LABEL][TEX].lower()	for point in self.output_points])
 		self.set_slope_at_points()
+		self.soil_types = set([point.container_polygons[SOIL_LABEL][TEX].lower()	for point in self.output_points])
 		
 		count = 0
 		for point in self.output_points:
@@ -403,6 +441,8 @@ class KharifModelCalculator:
 		
 		self.compute_zonewise_budget()
 		self.output_zonewise_budget_to_csv(zonewise_budget_csv_filename, PET_sum, rain_sum)
+		
+		self.compute_and_output_cadestral_vulnerability_to_csv(cadestral_vulnerability_csv_filename)
 		
 		print("--- %s seconds ---" % (time.time() - start_time))
 		print("done")

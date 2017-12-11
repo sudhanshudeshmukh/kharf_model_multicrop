@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>626</width>
-    <height>588</height>
+    <width>622</width>
+    <height>595</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>230</x>
-     <y>550</y>
+     <y>560</y>
      <width>156</width>
      <height>23</height>
     </rect>
@@ -35,7 +35,7 @@
      <x>10</x>
      <y>10</y>
      <width>601</width>
-     <height>321</height>
+     <height>341</height>
     </rect>
    </property>
    <property name="title">
@@ -50,9 +50,9 @@
    <widget class="QLineEdit" name="rainfall_csv_filename">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>240</y>
-      <width>471</width>
+      <x>170</x>
+      <y>290</y>
+      <width>321</width>
       <height>20</height>
      </rect>
     </property>
@@ -61,7 +61,7 @@
     <property name="geometry">
      <rect>
       <x>510</x>
-      <y>240</y>
+      <y>290</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -70,7 +70,7 @@
      <string>Browse</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="slope_layer_filename">
+   <widget class="QLineEdit" name="cadestral_layer_filename">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -123,7 +123,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="slope_layer_browse">
+   <widget class="QPushButton" name="cadestral_layer_browse">
     <property name="geometry">
      <rect>
       <x>510</x>
@@ -152,9 +152,9 @@
    <widget class="QComboBox" name="crop_combo_box">
     <property name="geometry">
      <rect>
-      <x>60</x>
-      <y>280</y>
-      <width>181</width>
+      <x>20</x>
+      <y>290</y>
+      <width>131</width>
       <height>22</height>
      </rect>
     </property>
@@ -215,7 +215,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>280</y>
+      <y>270</y>
       <width>31</width>
       <height>16</height>
      </rect>
@@ -227,8 +227,8 @@
    <widget class="QLabel" name="label_6">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>220</y>
+      <x>170</x>
+      <y>270</y>
       <width>121</width>
       <height>16</height>
      </rect>
@@ -242,6 +242,32 @@
      <rect>
       <x>20</x>
       <y>170</y>
+      <width>141</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Cadestral Map Vector Layer :</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="slope_layer_browse">
+    <property name="geometry">
+     <rect>
+      <x>510</x>
+      <y>240</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Browse</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_9">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>220</y>
       <width>98</width>
       <height>16</height>
      </rect>
@@ -250,64 +276,14 @@
      <string>Slope Raster Layer :</string>
     </property>
    </widget>
-   <widget class="QDateEdit" name="from_date_edit">
+   <widget class="QLineEdit" name="slope_layer_filename">
     <property name="geometry">
      <rect>
-      <x>310</x>
-      <y>280</y>
-      <width>110</width>
-      <height>22</height>
+      <x>20</x>
+      <y>240</y>
+      <width>471</width>
+      <height>20</height>
      </rect>
-    </property>
-    <property name="date">
-     <date>
-      <year>2017</year>
-      <month>6</month>
-      <day>1</day>
-     </date>
-    </property>
-   </widget>
-   <widget class="QDateEdit" name="to_date_edit">
-    <property name="geometry">
-     <rect>
-      <x>470</x>
-      <y>280</y>
-      <width>110</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="date">
-     <date>
-      <year>2017</year>
-      <month>11</month>
-      <day>30</day>
-     </date>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_14">
-    <property name="geometry">
-     <rect>
-      <x>270</x>
-      <y>280</y>
-      <width>41</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>From :</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_15">
-    <property name="geometry">
-     <rect>
-      <x>440</x>
-      <y>280</y>
-      <width>21</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>To :</string>
     </property>
    </widget>
   </widget>
@@ -315,7 +291,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>350</y>
+     <y>360</y>
      <width>601</width>
      <height>181</height>
     </rect>
@@ -327,7 +303,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>110</y>
+      <y>120</y>
       <width>541</width>
       <height>61</height>
      </rect>
