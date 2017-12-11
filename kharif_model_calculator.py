@@ -1,7 +1,8 @@
 from __future__ import division
 from qgis.gui import QgsMapToolEmitPoint
 import qgis.gui
-from qgis.core import QgsSpatialIndex, QgsPoint, QgsRectangle, QgsRaster
+from qgis.core import QgsSpatialIndex, QgsPoint, QgsRectangle, QgsRaster, QgsVectorLayer
+from qgis.analysis import  QgsGeometryAnalyzer
 from PyQt4.QtGui import *
 from PyQt4.QtCore import QVariant
 from PyQt4.QtCore import QFileInfo
@@ -208,6 +209,8 @@ class KharifModelCalculator:
 		self.cadestral_layer = VectorLayer(cadestral_layer, CADESTRAL_LABEL)
 		zone_polygon_ids = self.boundary_layer.feature_dict.keys()
 		self.zone_points_dict = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
+		cadestral_polygon_ids = self.cadestral_layer.feature_dict.keys()
+		self.cadestral_points_dict = dict(zip(cadestral_polygon_ids, [[]	for i in range(len(cadestral_polygon_ids))]))
 		#~ print 'zone_points_dict : ', self.zone_points_dict
 		
 		self.slope_layer = slope_layer
@@ -265,13 +268,18 @@ class KharifModelCalculator:
 		return [et0[i]*d[i] for i in range (0,len(d))]
 	
 	def filter_out_cadestral_plots_outside_boundary(self):
-		QgsGeometryAnalyzer().dissolve(self.boundary_layer, 'temp.shp')
+		QgsGeometryAnalyzer().dissolve(self.boundary_layer.layer, 'temp.shp')
 		dissolved_boundary_layer = QgsVectorLayer('temp.shp', 'dissolved boundary', 'ogr')
+		filtered_feature_dict = {}
 		for polygon_id in self.cadestral_layer.feature_dict:
-			if not self.cadestral_layer.feature_dict[polygon_id].intersects(dissolved_boundary_layer):
-				del self.cadestral_layer.feature_dict[polygon_id]
+			for feature in dissolved_boundary_layer.getFeatures():
+				if self.cadestral_layer.feature_dict[polygon_id].geometry().intersects(feature):
+					break
+			else:
+				 filtered_feature_dict[polygon_id] = self.cadestral_layer.feature_dict[polygon_id]
+		self.cadestral_layer.feature_dict = filtered_feature_dict
 	
-	def set_output_points(self, input_points_filename=None):
+	def generate_output_points_grid(self, input_points_filename=None):
 		if input_points_filename is None:
 			xminB =  self.boundary_layer.layer.extent().xMinimum()
 			xmaxB = self.boundary_layer.layer.extent().xMaximum()
@@ -311,7 +319,7 @@ class KharifModelCalculator:
 			if layer.name == CADESTRAL_LABEL:
 				for point in self.output_points:
 					polygon = layer.get_polygon_containing_point(point)
-					point.container_polygons[layer.name] = polygon
+					point.container_polygons[CADESTRAL_LABEL] = polygon
 					self.cadestral_points_dict[polygon.id()].append(point)
 			else:
 				for point in self.output_points:
@@ -325,14 +333,20 @@ class KharifModelCalculator:
 				filtered_points.append(point)
 			else:
 				self.zone_points_dict[point.container_polygons[BOUNDARY_LABEL].id()].remove(point)
+				self.cadestral_points_dict[point.container_polygons[CADESTRAL_LABEL].id()].remove(point)
 		self.output_points = filtered_points
 	
 	def add_points_for_empty_cadestral_plots(self):
+		count = 0
 		for polygon_id in self.cadestral_layer.feature_dict:
+			count += 1;	print count
 			if len(self.cadestral_points_dict[polygon_id]) == 0:
-				point = Point(self.cadestral_layer.feature_dict[polygon_id].geometry().centroid())
-				point.container_polygons[CADESTRAL_LABEL] = self.cadestral_points_dict[polygon_id]
+				point = Point(self.cadestral_layer.feature_dict[polygon_id].geometry().centroid().asPoint())
+				point.container_polygons[CADESTRAL_LABEL] = self.cadestral_layer.feature_dict[polygon_id]
 				self.cadestral_points_dict[polygon_id].append(point)
+				zone_polygon = self.boundary_layer.get_polygon_containing_point(point)
+				point.container_polygons[BOUNDARY_LABEL] = zone_polygon
+				self.zone_points_dict[zone_polygon.id()].append(point)
 				self.output_points.append(point)
 	
 	def set_slope_at_points(self):
@@ -396,10 +410,11 @@ class KharifModelCalculator:
 	def compute_and_output_cadestral_vulnerability_to_csv(self, cadestral_vulnerability_csv_filename):
 		plot_vulnerability_dict = {}
 		for polygon_id in self.cadestral_layer.feature_dict:
-			plot_vulnerability_dict[polygon_id] = \
+			if len(self.cadestral_points_dict[polygon_id]) == 0:	continue
+			plot_vulnerability_dict[self.cadestral_layer.feature_dict[polygon_id]['Number']] = \
 				sum([p.budget.PET_minus_AET	for p in self.cadestral_points_dict[polygon_id]]) / len(self.cadestral_points_dict[polygon_id])
 		sorted_keys = sorted(plot_vulnerability_dict.keys(), key=lambda ID:	plot_vulnerability_dict[ID], reverse=True)
-		csvwrite = open(self.path + zonewise_budget_csv_filename,'w+b')
+		csvwrite = open(self.path + cadestral_vulnerability_csv_filename,'w+b')
 		writer = csv.writer(csvwrite)
 		writer.writerow(['Plot ID', 'Vulnerability'])
 		for key in sorted_keys:	writer.writerow([key, plot_vulnerability_dict[key]])

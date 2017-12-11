@@ -188,45 +188,45 @@ class KharifModel:
 	def run(self):
 		"""Run method that performs all the real work"""
 		# show the dialog
-		self.dlg.show()
+		#~ self.dlg.show()
 		# See if Cancel was pressed
-		if self.dlg.exec_() == QFileDialog.Rejected:	return
+		#~ if self.dlg.exec_() == QFileDialog.Rejected:	return
 		
 		# Load input layers
-		boundary_layer = self.iface.addVectorLayer(self.dlg.watershed_layer_filename.text(), 'Watershed', 'ogr')
-		soil_layer = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
-		lulc_layer = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
-		cadestral_layer = self.iface.addVectorLayer(self.dlg.cadestral_layer_filename.text(), 'Cadestral Map', 'ogr')
-		slope_layer = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
-		#~ boundary_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/boundary_Jalamb_Yeulkhed.shp', 'Watershed', 'ogr')
-		#~ soil_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/soil_Jalamb_Yeulkhed.shp', 'Soil Cover', 'ogr')
-		#~ lulc_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/LULC_Jalamb_Yeulkhed.shp', 'Land-Use-Land-Cover', 'ogr')
-		#~ cadestral_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/Revenue_Jalamb_Yeulkhed.shp', 'Cadestral Map', 'ogr')
-		#~ slope_layer = self.iface.addRasterLayer('C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/Slope_Jalamb_Yeulkhed.tif', 'Slope')
+		#~ boundary_layer = self.iface.addVectorLayer(self.dlg.watershed_layer_filename.text(), 'Watershed', 'ogr')
+		#~ soil_layer = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
+		#~ lulc_layer = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
+		#~ cadestral_layer = self.iface.addVectorLayer(self.dlg.cadestral_layer_filename.text(), 'Cadestral Map', 'ogr')
+		#~ slope_layer = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
+		boundary_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Gondala/Gondala_Boundary.shp', 'Watershed', 'ogr')
+		soil_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Gondala/Soil.shp', 'Soil Cover', 'ogr')
+		lulc_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Gondala/Gondala_LuLc.shp', 'Land-Use-Land-Cover', 'ogr')
+		cadestral_layer = self.iface.addVectorLayer('C:/Users/Rahul/Desktop/Gondala/Gondala_Survey_Number.shp', 'Cadestral Map', 'ogr')
+		slope_layer = self.iface.addRasterLayer('C:/Users/Rahul/Desktop/Gondala/Slope_Gondala.tif', 'Slope')
 		
-		rainfall_csv = self.dlg.rainfall_csv_filename.text()
-		#~ rainfall_csv = 'C:/Users/Rahul/Desktop/Jalamb_Yeulkhed/rainfall.csv'
+		#~ rainfall_csv = self.dlg.rainfall_csv_filename.text()
+		rainfall_csv = 'C:/Users/Rahul/Desktop/Gondala/rainfall.csv'
 		
-		crop = self.dlg.crop_combo_box.currentText()
-		#~ crop = 'soyabean'
+		#~ crop = self.dlg.crop_combo_box.currentText()
+		crop = 'soyabean'
 		
-		start_qdate = self.dlg.from_date_edit.date()
-		date_with_index_0 = QDate(start_qdate.year(), 6, 1).dayOfYear()
-		start_date_index = start_qdate.dayOfYear() - date_with_index_0
-		end_qdate = self.dlg.to_date_edit.date()
-		end_date_index = end_qdate.dayOfYear() - date_with_index_0
+		#~ start_qdate = self.dlg.from_date_edit.date()
+		#~ date_with_index_0 = QDate(start_qdate.year(), 6, 1).dayOfYear()
+		#~ start_date_index = start_qdate.dayOfYear() - date_with_index_0
+		#~ end_qdate = self.dlg.to_date_edit.date()
+		#~ end_date_index = end_qdate.dayOfYear() - date_with_index_0
 		
 		interval_points = [int(self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')[0])	for i in range(1,self.dlg.colour_code_intervals_list_widget.count())]
 		
-		path = os.path.dirname(self.dlg.watershed_layer_filename.text())
-		#~ path = 'C:/Users/Rahul/Desktop/Jalamb_Yeulkhed'
+		#~ path = os.path.dirname(self.dlg.watershed_layer_filename.text())
+		path = 'C:/Users/Rahul/Desktop/Gondala'
 		pointwise_output_csv_filename = '/kharif_model_pointwise_output.csv'
 		zonewise_budget_csv_filename = '/kharif_model_zonewise_budget.csv'
 		cadestral_vulnerability_csv_filename = '/kharif_model_cadestral_vulnerability.csv'
 		model_calculator = KharifModelCalculator(path, boundary_layer, soil_layer, lulc_layer, cadestral_layer, slope_layer, rainfall_csv)
 		
 		#~ model_calculator.calculate(output_csv_filename,crop)
-		model_calculator.calculate(crop, pointwise_output_csv_filename, zonewise_budget_csv_filename, cadestral_vulnerability_csv_filename, start_date_index, end_date_index)
+		model_calculator.calculate(crop, pointwise_output_csv_filename, zonewise_budget_csv_filename, cadestral_vulnerability_csv_filename)
 		
 		#~ QgsMapLayerRegistry.instance().removeMapLayers([ws_layer, soil_layer, lulc_layer, slope_layer])
 		#~ return
