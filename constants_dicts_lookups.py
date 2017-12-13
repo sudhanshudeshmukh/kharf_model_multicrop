@@ -1,6 +1,6 @@
 ########	Constants Start	########
 
-STEP =500.0
+STEP =100.0
 NEW_LU= 'LU_Type'
 Desc = 'Descriptio'
 TEX = 'TEXTURE'
