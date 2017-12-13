@@ -257,7 +257,7 @@ class KharifModel:
 			graduated_symbol_renderer_range_list.append(interval_range)
 		renderer = QgsGraduatedSymbolRendererV2('', graduated_symbol_renderer_range_list)
 		renderer.setMode(QgsGraduatedSymbolRendererV2.EqualInterval)
-		renderer.setClassAttribute('PET-AET')
+		renderer.setClassAttribute('Monsoon PET-AET')
 
 		kharif_model_output_layer.setRendererV2(renderer)
 		QgsMapLayerRegistry.instance().addMapLayer(kharif_model_output_layer)
