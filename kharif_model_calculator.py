@@ -1,7 +1,7 @@
 from __future__ import division
 from qgis.gui import QgsMapToolEmitPoint
 import qgis.gui
-from qgis.core import QgsSpatialIndex, QgsPoint, QgsRectangle, QgsRaster, QgsVectorLayer
+from qgis.core import QgsSpatialIndex, QgsPoint, QgsRectangle, QgsRaster, QgsVectorLayer, QgsFeature
 from qgis.analysis import  QgsGeometryAnalyzer
 from PyQt4.QtGui import *
 from PyQt4.QtCore import QVariant
@@ -279,15 +279,14 @@ class KharifModelCalculator:
 		return ([et0[i]*d[i] for i in range (0,len(d))] ,kc_len-1)
 	
 	def filter_out_cadestral_plots_outside_boundary(self):
-		QgsGeometryAnalyzer().dissolve(self.zones_layer.qgsLayer, 'temp.shp')
-		dissolved_zones_layer = QgsVectorLayer('temp.shp', 'dissolved boundary', 'ogr')
+		#~ QgsGeometryAnalyzer().dissolve(self.zones_layer.qgsLayer, 'temp.shp')
+		#~ dissolved_zones_layer = QgsVectorLayer('temp.shp', 'dissolved boundary', 'ogr')
 		filtered_feature_dict = {}
 		for polygon_id in self.cadestral_layer.feature_dict:
-			for feature in dissolved_zones_layer.getFeatures():
-				if self.cadestral_layer.feature_dict[polygon_id].geometry().intersects(feature):
+			for feature in self.zones_layer.qgsLayer.getFeatures():
+				if self.cadestral_layer.feature_dict[polygon_id].geometry().intersects(feature.geometry()):
+					filtered_feature_dict[polygon_id] = self.cadestral_layer.feature_dict[polygon_id]
 					break
-			else:
-				 filtered_feature_dict[polygon_id] = self.cadestral_layer.feature_dict[polygon_id]
 		self.cadestral_layer.feature_dict = filtered_feature_dict
 	
 	def generate_output_points_grid(self, input_points_filename=None):
@@ -327,10 +326,15 @@ class KharifModelCalculator:
 		output_cadestral_points = []
 		for polygon_id in self.cadestral_layer.feature_dict:
 			qgsPoint = self.cadestral_layer.feature_dict[polygon_id].geometry().centroid().asPoint()
-			if self.cadestral_layer.feature_dict[polygon_id].geometry().contains(qgsPoint):
+			polygon_geom = self.cadestral_layer.feature_dict[polygon_id].geometry()
+			if polygon_geom.contains(qgsPoint):
 				point = Point(qgsPoint)
 			else:
-				point = Point(self.cadestral_layer.feature_dict[polygon_id].geometry().pointOnSurface().asPoint())
+				for feature in self.zones_layer.qgsLayer.getFeatures():
+					if polygon_geom.intersects(feature.geometry()):
+						polygon_intersection_some_zone = polygon_geom.intersection(feature.geometry())
+						point = Point(polygon_intersection_some_zone.pointOnSurface().asPoint())
+						break
 			point.container_polygons[CADESTRAL_LABEL] = self.cadestral_layer.feature_dict[polygon_id]
 			#~ cadestral_points_dict[polygon_id] = point
 			output_cadestral_points.append(point)
@@ -339,8 +343,9 @@ class KharifModelCalculator:
 	
 	def set_container_polygon_of_points_for_layers(self, points, polygon_vector_layers):
 		for layer in polygon_vector_layers:
-			for point in points:
-				point.container_polygons[layer.name] = layer.get_polygon_containing_point(point)
+			for p in points:
+				p.container_polygons[layer.name] = layer.get_polygon_containing_point(p)
+				#~ if p.container_polygons[layer.name] is None:	raise Exception(layer.name, p.qgsPoint.x(), p.qgsPoint.y())
 	
 	#~ def add_points_for_empty_cadestral_plots(self):
 		#~ count = 0
@@ -439,7 +444,7 @@ class KharifModelCalculator:
 		csvwrite = open(self.path + cadestral_vulnerability_csv_filename,'w+b')
 		writer = csv.writer(csvwrite)
 		writer.writerow(['Plot ID', 'Vulnerability', 'Deficit Waterings'])
-		for key in sorted_keys:	writer.writerow([key, '{0:.2f}'.format(plot_vulnerability_dict[key]), round((plot_vulnerability_dict[key]-25)/50)])
+		for key in sorted_keys:	writer.writerow([key, '{0:.2f}'.format(plot_vulnerability_dict[key]), round((plot_vulnerability_dict[key])/50)])
 		csvwrite.close()
 	
 	def calculate(self, 
@@ -481,6 +486,7 @@ class KharifModelCalculator:
 		self.output_cadestral_points = self.generate_output_points_for_cadestral_plots()
 		self.set_container_polygon_of_points_for_layers(self.output_cadestral_points, [self.soil_layer, self.lulc_layer])
 		self.output_cadestral_points = filter(lambda p:	dict_lulc[p.container_polygons[LULC_LABEL][Desc].lower()] != 'water', self.output_cadestral_points)
+		print 'Number of cadestral points to process : ', len(self.output_cadestral_points)
 		self.set_slope_at_points(self.output_cadestral_points)
 		for point in self.output_cadestral_points:
 			point.run_model(self.rain, PET, PET_sum, PET_sum_cropend, start_date_index, end_date_index,crop_end_index)

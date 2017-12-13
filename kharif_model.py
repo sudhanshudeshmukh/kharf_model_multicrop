@@ -189,6 +189,8 @@ class KharifModel:
 		"""Run method that performs all the real work"""
 		
 		#~ path = 'C:/Users/Rahul/Desktop/Test_Gondala/Test_Gondala'
+		#~ path = 'C:/Users/Rahul/Desktop/Gondala1'
+		#~ path = 'C:/Users/Rahul/Desktop/BW_new'
 		path = ''
 		debugging = path != ''
 		if debugging:
@@ -197,7 +199,7 @@ class KharifModel:
 			lulc_layer = self.iface.addVectorLayer(path + '/LULC.shp', 'Land-Use-Land-Cover', 'ogr')
 			cadestral_layer = self.iface.addVectorLayer(path + '/Cadestral.shp', 'Cadestral Map', 'ogr')
 			slope_layer = self.iface.addRasterLayer(path + '/Slope.tif', 'Slope')
-			drainage_layer = self.iface.addRasterLayer(path + '/Drainage.shp', 'Drainage', 'ogr')
+			#~ drainage_layer = self.iface.addRasterLayer(path + '/Drainage.shp', 'Drainage', 'ogr')
 			
 			rainfall_csv = path + '/Rainfall.csv'
 			crop = 'soyabean'
