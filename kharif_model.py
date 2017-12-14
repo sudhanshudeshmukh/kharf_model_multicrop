@@ -191,7 +191,7 @@ class KharifModel:
 		#~ path = 'C:/Users/Rahul/Desktop/Test_Gondala/Test_Gondala'
 		#~ path = 'C:/Users/Rahul/Desktop/Gondala1'
 		#~ path = 'C:/Users/Rahul/Desktop/BW_new'
-		path = 'C:/Users/Sudhanshu/Downloads/sin1'
+		path = ''
 		debugging = path != ''
 		if debugging:
 			zones_layer = self.iface.addVectorLayer(path + '/Zones.shp', 'Zones', 'ogr')
@@ -257,46 +257,19 @@ class KharifModel:
 			graduated_symbol_renderer_range_list.append(interval_range)
 		renderer = QgsGraduatedSymbolRendererV2('', graduated_symbol_renderer_range_list)
 		renderer.setMode(QgsGraduatedSymbolRendererV2.EqualInterval)
-		renderer.setClassAttribute('Crop duration PET-AET')
+		renderer.setClassAttribute('Monsoon PET-AET')
+
 		kharif_model_output_layer.setRendererV2(renderer)
 		QgsMapLayerRegistry.instance().addMapLayer(kharif_model_output_layer)
 		
 		QgsVectorFileWriter.writeAsVectorFormat(kharif_model_output_layer, path+'/kharif_et_deficit.shp', "utf-8", None, "ESRI Shapefile")
-
-		#Dislpaying for long kharif crops
-		if(crop in long_kharif_crops):
-			kharif_model_monsoon_end_output_layer = QgsVectorLayer(uri, 'Kharif Model Monsoon End Output','delimitedtext')	
-			graduated_symbol_renderer_range_list = []
-			ET_D_max = max([point.budget.PET_minus_AET_monsoon_end	for point in model_calculator.output_grid_points])
-			opacity = 1
-			intervals_count = self.dlg.colour_code_intervals_list_widget.count()
-			for i in range(intervals_count):
-				percent_interval_start_text, percent_interval_end_text = self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')
-				interval_min = 0 if percent_interval_start_text == '0' else (int(percent_interval_start_text)*ET_D_max/100.0 + 0.01)
-				interval_max = (int(percent_interval_end_text)*ET_D_max/100.0)
-				label = "{0:.2f} - {1:.2f}".format(interval_min, interval_max)
-				colour = QColor(int(255*(1-(i+1.0)/(intervals_count+1.0))), 0, 0)	# +1 done to tackle boundary cases
-				symbol = QgsSymbolV2.defaultSymbol(kharif_model_monsoon_end_output_layer.geometryType())
-				symbol.setColor(colour)
-				symbol.setAlpha(opacity)
-				interval_range = QgsRendererRangeV2(interval_min, interval_max, symbol, label)
-				graduated_symbol_renderer_range_list.append(interval_range)
-			renderer = QgsGraduatedSymbolRendererV2('', graduated_symbol_renderer_range_list)
-			renderer.setMode(QgsGraduatedSymbolRendererV2.EqualInterval)
-			renderer.setClassAttribute('Monsoon PET-AET')
-			kharif_model_monsoon_end_output_layer.setRendererV2(renderer)
-			QgsMapLayerRegistry.instance().addMapLayer(kharif_model_monsoon_end_output_layer)
-			QgsVectorFileWriter.writeAsVectorFormat(kharif_model_monsoon_end_output_layer, path+'/kharif_post_monsoon_et_deficit.shp', "utf-8", None, "ESRI Shapefile")
-
 		
 		self.iface.actionHideAllLayers().trigger()
 		self.iface.legendInterface().setLayerVisible(zones_layer, True)
 		if 'drainage_layer' in locals():	self.iface.legendInterface().setLayerVisible(drainage_layer, True)
-		if (crop in long_kharif_crops):		self.iface.legendInterface().setLayerVisible(kharif_model_monsoon_end_output_layer	, True)
 		self.iface.legendInterface().setLayerVisible(kharif_model_output_layer	, True)
 		self.iface.mapCanvas().setExtent(zones_layer.extent())
 		self.iface.mapCanvas().mapRenderer().setDestinationCrs(zones_layer.crs())
-
 			
 		if self.dlg.save_image_group_box.isChecked():
 			QTimer.singleShot(1000, lambda :	self.iface.mapCanvas().saveAsImage(self.dlg.save_image_filename.text()))
