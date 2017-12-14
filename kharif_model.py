@@ -191,7 +191,7 @@ class KharifModel:
 		#~ path = 'C:/Users/Rahul/Desktop/Test_Gondala/Test_Gondala'
 		#~ path = 'C:/Users/Rahul/Desktop/Gondala1'
 		#~ path = 'C:/Users/Rahul/Desktop/BW_new'
-		path = 'C:/Users/Sudhanshu/Downloads/sin1'
+		path = ''
 		debugging = path != ''
 		if debugging:
 			zones_layer = self.iface.addVectorLayer(path + '/Zones.shp', 'Zones', 'ogr')
