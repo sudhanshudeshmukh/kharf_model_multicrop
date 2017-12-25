@@ -7,7 +7,7 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=Kharif Model
+name=Kharif Model - Multicrop
 qgisMinimumVersion=2.0
 description=Generates kharif season vulnerability map
 version=0.1

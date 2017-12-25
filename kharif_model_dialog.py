@@ -24,7 +24,9 @@
 import os
 
 from PyQt4 import QtGui, uic
-#~ from PyQt4.QtCore import QString
+from PyQt4.QtGui import QFileDialog
+
+from constants_dicts_lookups import dict_crop
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'kharif_model_dialog_base.ui'))
@@ -41,9 +43,10 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 		# #widgets-and-dialogs-with-auto-connect
 		self.setupUi(self)
 		
-		self.crop_combo_box.addItems(crops)
+		#~ self.crop_combo_box.addItems(crops)
 		
 		self.last_path = ''
+		self.crops = []
 		
 		self.folder_path_browse.clicked.connect(lambda : self.on_browse(self.folder_path, 'Folder containing the data-set', folder=True))
 		self.zones_layer_browse.clicked.connect(lambda : self.on_browse(self.zones_layer_filename, 'Zones Vector Layer', 'Shapefiles (*.shp)'))
@@ -53,6 +56,7 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 		self.slope_layer_browse.clicked.connect(lambda : self.on_browse(self.slope_layer_filename, 'Slope Raster Layer', 'TIFF files (*.tif *.tiff)'))
 		self.drainage_layer_browse.clicked.connect(lambda : self.on_browse(self.drainage_layer_filename, 'Drainage Vector Layer', 'Shapefiles (*.shp)'))
 		self.rainfall_csv_browse.clicked.connect(lambda : self.on_browse(self.rainfall_csv_filename, 'Daily Rainfall CSV File', 'CSV files (*.csv)'))
+		self.crops_select_button.clicked.connect(lambda : self.on_crop_select_button())
 		self.save_image_browse.clicked.connect(lambda : self.on_browse(self.save_image_filename, 'Save As Image In Folder', 'PNG files (*.png)', folder=True, save=True))
 		
 		self.colour_code_interval_points = [0, 100]
@@ -103,6 +107,13 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 		if selection > 0:
 			self.colour_code_intervals_list_widget.takeItem(selection-1)
 			self.colour_code_intervals_list_widget.takeItem(selection-1)
-			#~ print self.colour_code_interval_points, selection
 			del self.colour_code_interval_points[selection]
 			self.colour_code_intervals_list_widget.insertItem(selection-1, str(self.colour_code_interval_points[selection-1])+'-'+str(self.colour_code_interval_points[selection]))
+	
+	def on_crop_select_button(self):
+		crops_selection_dialog = uic.loadUi(os.path.join(os.path.dirname(__file__), 'crops_selection_dialog.ui'))
+		for crop in self.crops:	eval("crops_selection_dialog."+crop+".setChecked(True)")
+		crops_selection_dialog.show()
+		if crops_selection_dialog.exec_() == QFileDialog.Rejected:	return
+		self.crops = filter(lambda crop: eval("hasattr(csd, '"+crop+"') and csd."+crop+".isChecked()", {"csd": crops_selection_dialog}), sorted(dict_crop.keys()))
+		self.selected_crops.setText(', '.join(self.crops))

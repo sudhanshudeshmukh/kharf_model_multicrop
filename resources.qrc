@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/KharifModel" >
+    <qresource prefix="/plugins/KharifModelMulticrop" >
         <file>icon.png</file>
     </qresource>
 </RCC>

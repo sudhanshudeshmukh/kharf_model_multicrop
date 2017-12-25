@@ -26,12 +26,13 @@ from PyQt4.QtGui import QAction, QIcon, QFileDialog, QColor
 import resources
 # Import the code for the dialog
 from kharif_model_dialog import KharifModelDialog
-import os.path
+from kharif_model_output_processor import KharifModelOutputProcessor
+import os.path, csv
 # Import code for the calculation
 from kharif_model_calculator import KharifModelCalculator
 from qgis.core import QgsMapLayerRegistry, QgsVectorLayer, QgsSymbolV2, QgsRendererRangeV2, QgsGraduatedSymbolRendererV2, QgsVectorFileWriter
 from constants_dicts_lookups import *
-
+from configuration import *
 
 class KharifModel:
 	"""QGIS Plugin Implementation."""
@@ -65,10 +66,10 @@ class KharifModel:
 
 		# Declare instance attributes
 		self.actions = []
-		self.menu = self.tr(u'&Kharif Model')
+		self.menu = self.tr(u'&Kharif Model - Multicrop')
 		# TODO: We are going to let the user set this up in a future iteration
-		self.toolbar = self.iface.addToolBar(u'KharifModel')
-		self.toolbar.setObjectName(u'KharifModel')
+		self.toolbar = self.iface.addToolBar(u'KharifModelMulticrop')
+		self.toolbar.setObjectName(u'KharifModelMulticrop')
 		
 
 	# noinspection PyMethodMayBeStatic
@@ -84,7 +85,7 @@ class KharifModel:
 		:rtype: QString
 		"""
 		# noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-		return QCoreApplication.translate('KharifModel', message)
+		return QCoreApplication.translate('KharifModelMulticrop', message)
 
 
 	def add_action(
@@ -166,10 +167,10 @@ class KharifModel:
 	def initGui(self):
 		"""Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-		icon_path = ':/plugins/KharifModel/icon.png'
+		icon_path = ':/plugins/KharifModelMulticrop/icon.png'
 		self.add_action(
 			icon_path,
-			text=self.tr(u'Kharif Model'),
+			text=self.tr(u'Kharif Model - Multicrop'),
 			callback=self.run,
 			parent=self.iface.mainWindow())
 
@@ -178,7 +179,7 @@ class KharifModel:
 		"""Removes the plugin menu item and icon from QGIS GUI."""
 		for action in self.actions:
 			self.iface.removePluginMenu(
-				self.tr(u'&Kharif Model'),
+				self.tr(u'&Kharif Model - Multicrop'),
 				action)
 			self.iface.removeToolBarIcon(action)
 		# remove the toolbar
@@ -188,115 +189,125 @@ class KharifModel:
 	def run(self):
 		"""Run method that performs all the real work"""
 		
-		#~ path = 'C:/Users/Rahul/Desktop/Test_Gondala/Test_Gondala'
-		#~ path = 'C:/Users/Rahul/Desktop/Gondala1'
-		#~ path = 'C:/Users/Rahul/Desktop/BW_new'
-		path = ''
-		debugging = path != ''
-		if debugging:
-			zones_layer = self.iface.addVectorLayer(path + '/Zones.shp', 'Zones', 'ogr')
-			soil_layer = self.iface.addVectorLayer(path + '/Soil.shp', 'Soil Cover', 'ogr')
-			lulc_layer = self.iface.addVectorLayer(path + '/LULC.shp', 'Land-Use-Land-Cover', 'ogr')
-			cadestral_layer = self.iface.addVectorLayer(path + '/Cadestral.shp', 'Cadestral Map', 'ogr')
-			slope_layer = self.iface.addRasterLayer(path + '/Slope.tif', 'Slope')
-			#~ drainage_layer = self.iface.addRasterLayer(path + '/Drainage.shp', 'Drainage', 'ogr')
+		if PLUGIN_MODE == 'DEBUG':
+			if not os.path.exists(DEBUG_BASE_FOLDER_PATH):	raise Exception('Set DEBUG_BASE_FOLDER_PATH for the debug dataset')
+			paths = [DEBUG_BASE_FOLDER_PATH]
+		elif PLUGIN_MODE == 'REAL':
+			paths = ['']
+		else:
+			if not os.path.exists(TEST_SUITE_BASE_FOLDER_PATH):	raise Exception('Set TEST_SUITE_BASE_FOLDER_PATH for the debug dataset')
+			paths = [base_path	for base_path in os.listdir(TEST_SUITE_BASE_FOLDER_PATH)	if os.path.isdir(base_path)]
+		
+		for path in paths:
+			self.fetch_inputs(path)
 			
-			rainfall_csv = path + '/Rainfall.csv'
-			crop = 'soyabean'
-			interval_points = [50, 100]
+			self.modelCalculator = KharifModelCalculator(self.et0, **self.input_layers)
+			self.modelCalculator.calculate(self.rain, self.crop_names)
+			
+			pointwise_output_csv_filepath = os.path.join(self.base_path, POINTWISE_OUTPUT_CSV_FILENAME)
+			
+			op = KharifModelOutputProcessor()
+			op.output_point_results_to_csv	(
+				self.modelCalculator.output_grid_points,
+				pointwise_output_csv_filepath,
+				crops=[crop.name for crop in self.modelCalculator.crops]
+			)
+			zonewise_budgets = op.compute_zonewise_budget	(
+				self.modelCalculator.zone_points_dict
+			)
+			op.output_zonewise_budget_to_csv	(
+				zonewise_budgets,
+				self.modelCalculator.crops,
+				self.modelCalculator.LULC_pseudo_crops.values(),
+				os.path.join(self.base_path, ZONEWISE_BUDGET_CSV_FILENAME),
+				sum(self.rain[START_DATE_INDEX : MONSOON_END_DATE_INDEX+1])
+			)
+		return
+		#~ op.output_cadestral_vulnerability_to_csv	(
+			#~ self.modelCalculator.output_cadestral_points,
+			#~ os.path.join(self.base_path, CADESTRAL_VULNERABILITY_CSV_FILENAME)
+		#~ )
+		
+		#~ kharif_model_crop_end_output_layer = \
+			#~ op.render_and_save_pointwise_output_layer(
+				#~ pointwise_output_csv_filepath,
+				#~ 'Kharif Model Crop End Output',
+				#~ 'Crop duration PET-AET',
+				#~ self.output_configuration['graduated_rendering_interval_points'],
+				#~ shapefile_path=os.path.join(self.base_path, 'kharif_crop_duration_et_deficit.shp')
+			#~ )
+		#~ if(crop in long_kharif_crops):
+			#~ kharif_model_monsoon_end_output_layer = \
+				#~ op.render_and_save_pointwise_output_layer(
+					#~ pointwise_output_csv_filepath,
+					#~ 'Kharif Model Monsoon End Output',
+					#~ 'Monsoon PET-AET',
+					#~ self.output_configuration['graduated_rendering_interval_points'],
+					#~ shapefile_path=os.path.join(self.base_path, 'kharif_monsoon_et_deficit.shp')
+				#~ )
+		
+		#~ self.iface.actionHideAllLayers().trigger()
+		#~ self.iface.legendInterface().setLayerVisible(self.input_layers['zones_layer'], True)
+		#~ if 'drainage_layer' in locals():	self.iface.legendInterface().setLayerVisible(self.input_layers['drainage_layer'], True)
+		#~ if (crop in long_kharif_crops):		self.iface.legendInterface().setLayerVisible(kharif_model_monsoon_end_output_layer, True)
+		#~ self.iface.legendInterface().setLayerVisible(kharif_model_crop_end_output_layer, True)
+		#~ self.iface.mapCanvas().setExtent(self.input_layers['zones_layer'].extent())
+		#~ self.iface.mapCanvas().mapRenderer().setDestinationCrs(self.input_layers['zones_layer'].crs())
+
+		#~ if self.dlg.save_image_group_box.isChecked():
+			#~ QTimer.singleShot(1000, lambda :	self.iface.mapCanvas().saveAsImage(self.dlg.save_image_filename.text()))
+	
+	def fetch_inputs(self, path):
+		def set_et0_from_et0_file_data(et0_file_data):
+			et0 = []
+			for i in range (0,len(et0_file_data)):
+				if (i in [0,3,5,10]):	et0.extend([et0_file_data[i]]*30)
+				elif i == 8:		et0.extend([et0_file_data[i]]*28)
+				else:					et0.extend([et0_file_data[i]]*31)
+			return et0
+		if path != '':
+			self.base_path = path
+			self.input_layers = {}
+			self.input_layers['zones_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Zones.shp'), 'Zones', 'ogr')
+			self.input_layers['soil_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Soil.shp'), 'Soil Cover', 'ogr')
+			self.input_layers['lulc_layer'] = self.iface.addVectorLayer(os.path.join(path, 'LULC.shp'), 'Land-Use-Land-Cover', 'ogr')
+			self.input_layers['cadestral_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Cadestral.shp'), 'Cadestral Map', 'ogr')
+			self.input_layers['slope_layer'] = self.iface.addRasterLayer(os.path.join(path, 'Slope.tif'), 'Slope')
+			#~ self.input_layers['drainage_layer'] = self.iface.addRasterLayer(os.path.join(path, 'Drainage.shp'), 'Drainage', 'ogr')
+			
+			self.rain = [int(row["Rainfall"]) for row in csv.DictReader(open(os.path.join(path, RAINFALL_CSV_FILENAME)))]
+			et0_file_data = [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
+			self.et0 = set_et0_from_et0_file_data(et0_file_data)
+			if not OVERRIDE_FILECROPS_BY_DEBUG_OR_TEST_CROPS and os.path.exists(os.path.join(path, CROPS_FILENAME)):
+				self.crop_names = open(os.path.join(path, CROPS_FILENAME), 'r').read().split(',')
+			else:
+				self.crop_names = DEBUG_OR_TEST_CROPS
+			#~ self.output_configuration = {}
+			#~ self.output_configuration['graduated_rendering_interval_points'] = DEBUG_GRADUATED_RENDERING_INTERVAL_POINTS
+			
 		else:
 			self.dlg.show()
 			if self.dlg.exec_() == QFileDialog.Rejected:	return
 			
-			path = self.dlg.folder_path.text()
-			zones_layer = self.iface.addVectorLayer(self.dlg.zones_layer_filename.text(), 'Zones', 'ogr')
-			soil_layer = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
-			lulc_layer = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
-			cadestral_layer = self.iface.addVectorLayer(self.dlg.cadestral_layer_filename.text(), 'Cadestral Map', 'ogr')
-			slope_layer = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
+			path = self.base_path = self.dlg.folder_path.text()
+			
+			self.input_layers = {}
+			self.input_layers['zones_layer'] = self.iface.addVectorLayer(self.dlg.zones_layer_filename.text(), 'Zones', 'ogr')
+			self.input_layers['soil_layer'] = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
+			self.input_layers['lulc_layer'] = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
+			self.input_layers['cadestral_layer'] = self.iface.addVectorLayer(self.dlg.cadestral_layer_filename.text(), 'Cadestral Map', 'ogr')
+			self.input_layers['slope_layer'] = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
 			if self.dlg.drainage_layer_filename.text() != '':
-				drainage_layer = self.iface.addRasterLayer(self.dlg.drainage_layer_filename.text(), 'Drainage', 'ogr')
+				self.input_layers['drainage_layer'] = self.iface.addRasterLayer(self.dlg.drainage_layer_filename.text(), 'Drainage', 'ogr')
 			
-			rainfall_csv = self.dlg.rainfall_csv_filename.text()
-			crop = self.dlg.crop_combo_box.currentText()
-			interval_points = [int(self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')[0])	for i in range(1,self.dlg.colour_code_intervals_list_widget.count())]
+			self.rain = [int(row["Rainfall"]) for row in csv.DictReader(open(self.dlg.rainfall_csv_filename.text()))]
+			et0_file_data = [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
+			self.et0 = set_et0_from_et0_file_data(et0_file_data)
 			
-			#~ print path, zones_layer, soil_layer, lulc_layer, cadestral_layer, slope_layer, drainage_layer, rainfall_csv
-			
-		
-		#~ start_qdate = self.dlg.from_date_edit.date()
-		#~ date_with_index_0 = QDate(start_qdate.year(), 6, 1).dayOfYear()
-		#~ start_date_index = start_qdate.dayOfYear() - date_with_index_0
-		#~ end_qdate = self.dlg.to_date_edit.date()
-		#~ end_date_index = end_qdate.dayOfYear() - date_with_index_0
-		
-		pointwise_output_csv_filename = '/kharif_model_pointwise_output.csv'
-		zonewise_budget_csv_filename = '/kharif_model_zonewise_budget.csv'
-		cadestral_vulnerability_csv_filename = '/kharif_model_cadestral_vulnerability.csv'
-		model_calculator = KharifModelCalculator(path, zones_layer, soil_layer, lulc_layer, cadestral_layer, slope_layer, rainfall_csv)
-		
-		model_calculator.calculate(crop, pointwise_output_csv_filename, zonewise_budget_csv_filename, cadestral_vulnerability_csv_filename)
-		
-		uri = 'file:///' + path + pointwise_output_csv_filename + '?delimiter=%s&crs=epsg:32643&xField=%s&yField=%s' % (',', 'X', 'Y')
-		kharif_model_output_layer = QgsVectorLayer(uri, 'Kharif Model Output','delimitedtext')
-		
-		graduated_symbol_renderer_range_list = []
-		ET_D_max = max([point.budget.PET_minus_AET_crop_end	for point in model_calculator.output_grid_points])
-		opacity = 1
-		intervals_count = self.dlg.colour_code_intervals_list_widget.count()
-		for i in range(intervals_count):
-			percent_interval_start_text, percent_interval_end_text = self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')
-			interval_min = 0 if percent_interval_start_text == '0' else (int(percent_interval_start_text)*ET_D_max/100.0 + 0.01)
-			interval_max = (int(percent_interval_end_text)*ET_D_max/100.0)
-			label = "{0:.2f} - {1:.2f}".format(interval_min, interval_max)
-			colour = QColor(int(255*(1-(i+1.0)/(intervals_count+1.0))), 0, 0)	# +1 done to tackle boundary cases
-			symbol = QgsSymbolV2.defaultSymbol(kharif_model_output_layer.geometryType())
-			symbol.setColor(colour)
-			symbol.setAlpha(opacity)
-			interval_range = QgsRendererRangeV2(interval_min, interval_max, symbol, label)
-			graduated_symbol_renderer_range_list.append(interval_range)
-		renderer = QgsGraduatedSymbolRendererV2('', graduated_symbol_renderer_range_list)
-		renderer.setMode(QgsGraduatedSymbolRendererV2.EqualInterval)
-		renderer.setClassAttribute('Crop duration PET-AET')
-		kharif_model_output_layer.setRendererV2(renderer)
-		QgsMapLayerRegistry.instance().addMapLayer(kharif_model_output_layer)
-		
-		QgsVectorFileWriter.writeAsVectorFormat(kharif_model_output_layer, path+'/kharif_et_deficit.shp', "utf-8", None, "ESRI Shapefile")
-
-		#Dislpaying for long kharif crops
-		if(crop in long_kharif_crops):
-			kharif_model_monsoon_end_output_layer = QgsVectorLayer(uri, 'Kharif Model Monsoon End Output','delimitedtext')	
-			graduated_symbol_renderer_range_list = []
-			ET_D_max = max([point.budget.PET_minus_AET_monsoon_end	for point in model_calculator.output_grid_points])
-			opacity = 1
-			intervals_count = self.dlg.colour_code_intervals_list_widget.count()
-			for i in range(intervals_count):
-				percent_interval_start_text, percent_interval_end_text = self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')
-				interval_min = 0 if percent_interval_start_text == '0' else (int(percent_interval_start_text)*ET_D_max/100.0 + 0.01)
-				interval_max = (int(percent_interval_end_text)*ET_D_max/100.0)
-				label = "{0:.2f} - {1:.2f}".format(interval_min, interval_max)
-				colour = QColor(int(255*(1-(i+1.0)/(intervals_count+1.0))), 0, 0)	# +1 done to tackle boundary cases
-				symbol = QgsSymbolV2.defaultSymbol(kharif_model_monsoon_end_output_layer.geometryType())
-				symbol.setColor(colour)
-				symbol.setAlpha(opacity)
-				interval_range = QgsRendererRangeV2(interval_min, interval_max, symbol, label)
-				graduated_symbol_renderer_range_list.append(interval_range)
-			renderer = QgsGraduatedSymbolRendererV2('', graduated_symbol_renderer_range_list)
-			renderer.setMode(QgsGraduatedSymbolRendererV2.EqualInterval)
-			renderer.setClassAttribute('Monsoon PET-AET')
-			kharif_model_monsoon_end_output_layer.setRendererV2(renderer)
-			QgsMapLayerRegistry.instance().addMapLayer(kharif_model_monsoon_end_output_layer)
-			QgsVectorFileWriter.writeAsVectorFormat(kharif_model_monsoon_end_output_layer, path+'/kharif_post_monsoon_et_deficit.shp', "utf-8", None, "ESRI Shapefile")
-
-		
-		self.iface.actionHideAllLayers().trigger()
-		self.iface.legendInterface().setLayerVisible(zones_layer, True)
-		if 'drainage_layer' in locals():	self.iface.legendInterface().setLayerVisible(drainage_layer, True)
-		if (crop in long_kharif_crops):		self.iface.legendInterface().setLayerVisible(kharif_model_monsoon_end_output_layer	, True)
-		self.iface.legendInterface().setLayerVisible(kharif_model_output_layer	, True)
-		self.iface.mapCanvas().setExtent(zones_layer.extent())
-		self.iface.mapCanvas().mapRenderer().setDestinationCrs(zones_layer.crs())
-
-			
-		if self.dlg.save_image_group_box.isChecked():
-			QTimer.singleShot(1000, lambda :	self.iface.mapCanvas().saveAsImage(self.dlg.save_image_filename.text()))
+			self.crop_names = self.dlg.crops
+			#~ self.output_configuration = {}
+			#~ self.output_configuration['graduated_rendering_interval_points'] = [
+				#~ int(self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')[0])
+					#~ for i in range(1,self.dlg.colour_code_intervals_list_widget.count())
+			#~ ]
+	
