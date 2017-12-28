@@ -70,7 +70,7 @@
      <string>Browse</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="cadestral_layer_filename">
+   <widget class="QLineEdit" name="cadastral_layer_filename">
     <property name="geometry">
      <rect>
       <x>320</x>
@@ -123,7 +123,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="cadestral_layer_browse">
+   <widget class="QPushButton" name="cadastral_layer_browse">
     <property name="geometry">
      <rect>
       <x>530</x>
@@ -237,7 +237,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Cadestral Map Vector Layer :</string>
+     <string>Cadastral Map Vector Layer :</string>
     </property>
    </widget>
    <widget class="QPushButton" name="slope_layer_browse">

@@ -52,7 +52,7 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 		self.zones_layer_browse.clicked.connect(lambda : self.on_browse(self.zones_layer_filename, 'Zones Vector Layer', 'Shapefiles (*.shp)'))
 		self.soil_layer_browse.clicked.connect(lambda : self.on_browse(self.soil_layer_filename, 'Soil-cover Vector Layer', 'Shapefiles (*.shp)'))
 		self.lulc_layer_browse.clicked.connect(lambda : self.on_browse(self.lulc_layer_filename, 'Land-use-land-cover Vector Layer', 'Shapefiles (*.shp)'))
-		self.cadestral_layer_browse.clicked.connect(lambda : self.on_browse(self.cadestral_layer_filename, 'Cadestral Map Vector Layer', 'Shapefiles (*.shp)'))
+		self.cadastral_layer_browse.clicked.connect(lambda : self.on_browse(self.cadastral_layer_filename, 'Cadastral Map Vector Layer', 'Shapefiles (*.shp)'))
 		self.slope_layer_browse.clicked.connect(lambda : self.on_browse(self.slope_layer_filename, 'Slope Raster Layer', 'TIFF files (*.tif *.tiff)'))
 		self.drainage_layer_browse.clicked.connect(lambda : self.on_browse(self.drainage_layer_filename, 'Drainage Vector Layer', 'Shapefiles (*.shp)'))
 		self.rainfall_csv_browse.clicked.connect(lambda : self.on_browse(self.rainfall_csv_filename, 'Daily Rainfall CSV File', 'CSV files (*.csv)'))
@@ -82,11 +82,12 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 			'Zones.shp': self.zones_layer_filename,
 			'Soil.shp': self.soil_layer_filename,
 			'LULC.shp': self.lulc_layer_filename,
-			'Cadestral.shp': self.cadestral_layer_filename,
+			'Cadastral.shp': self.cadastral_layer_filename,
 			'Slope.tif': self.slope_layer_filename,
 			'Drainage.shp': self.drainage_layer_filename,
 			'Rainfall.csv': self.rainfall_csv_filename
 		}
+		print path + '/Rainfall.csv', os.path.exists(path + '/Rainfall.csv')
 		for inputfile in inputfiles_lineEdit_dict:
 			if os.path.exists(path + '/' + inputfile):
 				inputfiles_lineEdit_dict[inputfile].setText(path + '/' + inputfile)

@@ -22,7 +22,7 @@ BOUNDARY_LABEL = 'Zones'
 SOIL_LABEL = 'Soil'
 LULC_LABEL = 'Land-Use-Land-Cover'
 SLOPE_LABEL = 'Slope'
-CADESTRAL_LABEL = 'Cadestral'
+CADASTRAL_LABEL = 'Cadastral'
 
 
 class Budget:
@@ -77,9 +77,14 @@ class Point:
 	@property
 	def lulc_polygon(self):	return self.container_polygons[LULC_LABEL]
 	@property
-	def cadestral_polygon(self):	return self.container_polygons[CADESTRAL_LABEL]
+	def cadastral_polygon(self):	return self.container_polygons[CADASTRAL_LABEL]
 	@property
-	def texture(self):	return self.soil_polygon[TEX].lower()
+	def texture(self):
+		try:
+			return self.soil_polygon[TEX].lower()
+		except Exception:
+			print self.qgsPoint.x(), self.qgsPoint.y()
+
 	@property
 	def depth_value(self):	return dict_SoilDep[self.soil_polygon[Depth].lower()]
 	@property
@@ -103,8 +108,8 @@ class Point:
 	def soil_polygon(self, polygon):	self.container_polygons[SOIL_LABEL] = polygon
 	@lulc_polygon.setter
 	def lulc_polygon(self, polygon):	self.container_polygons[LULC_LABEL] = polygon
-	@cadestral_polygon.setter
-	def cadestral_polygon(self, polygon):	self.container_polygons[CADESTRAL_LABEL] = polygon
+	@cadastral_polygon.setter
+	def cadastral_polygon(self, polygon):	self.container_polygons[CADASTRAL_LABEL] = polygon
 	
 	def run_model(self, rain, crops, start_date_index, end_date_index):
 		
@@ -244,15 +249,15 @@ class KharifModelCalculator:
 	The actual algorithm for calculating results of the Kharif Model
 	"""
 	
-	def __init__(self, et0, zones_layer, soil_layer, lulc_layer, cadestral_layer, slope_layer):
+	def __init__(self, et0, zones_layer, soil_layer, lulc_layer, cadastral_layer, slope_layer):
 		self.zones_layer = VectorLayer(zones_layer, BOUNDARY_LABEL)
 		self.soil_layer = VectorLayer(soil_layer, SOIL_LABEL)
 		self.lulc_layer = VectorLayer(lulc_layer, LULC_LABEL)
-		self.cadestral_layer = VectorLayer(cadestral_layer, CADESTRAL_LABEL)
+		self.cadastral_layer = VectorLayer(cadastral_layer, CADASTRAL_LABEL)
 		
 		zone_polygon_ids = self.zones_layer.feature_dict.keys()
 		self.zone_points_dict = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
-		cadestral_polygon_ids = self.cadestral_layer.feature_dict.keys()
+		cadastral_polygon_ids = self.cadastral_layer.feature_dict.keys()
 		
 		self.slope_layer = slope_layer
 		
@@ -276,9 +281,8 @@ class KharifModelCalculator:
 		for crop in self.crops + self.LULC_pseudo_crops.values():
 			kc = (pre_sowing_kc if crop in self.crops else []) + crop.KC
 			crop.end_date_index = len(kc) - 1
-			if(len(kc) <= 183):		kc = kc + [0]*(len(self.rain)-len(kc))
-			else:					self.rain = self.rain + [0]*(len(kc)-len(self.rain))
-			print len(kc), len(et0)
+			kc = kc + [0]*(365-len(kc))
+			self.rain = self.rain + [0]*(365-len(self.rain))
 			crop.PET = np.array(et0[0:len(kc)]) * np.array(kc)
 	
 	def generate_output_points_grid(self):
@@ -308,22 +312,22 @@ class KharifModelCalculator:
 				filtered_points.append(point)
 		self.output_grid_points = filtered_points
 	
-	def filter_out_cadestral_plots_outside_boundary(self):
+	def filter_out_cadastral_plots_outside_boundary(self):
 		#~ QgsGeometryAnalyzer().dissolve(self.zones_layer.qgsLayer, 'temp.shp')
 		#~ dissolved_zones_layer = QgsVectorLayer('temp.shp', 'dissolved boundary', 'ogr')
 		filtered_feature_dict = {}
-		for polygon_id in self.cadestral_layer.feature_dict:
+		for polygon_id in self.cadastral_layer.feature_dict:
 			for feature in self.zones_layer.qgsLayer.getFeatures():
-				if self.cadestral_layer.feature_dict[polygon_id].geometry().intersects(feature.geometry()):
-					filtered_feature_dict[polygon_id] = self.cadestral_layer.feature_dict[polygon_id]
+				if self.cadastral_layer.feature_dict[polygon_id].geometry().intersects(feature.geometry()):
+					filtered_feature_dict[polygon_id] = self.cadastral_layer.feature_dict[polygon_id]
 					break
-		self.cadestral_layer.feature_dict = filtered_feature_dict
+		self.cadastral_layer.feature_dict = filtered_feature_dict
 	
-	def generate_output_points_for_cadestral_plots(self):
-		output_cadestral_points = []
-		for polygon_id in self.cadestral_layer.feature_dict:
-			qgsPoint = self.cadestral_layer.feature_dict[polygon_id].geometry().centroid().asPoint()
-			polygon_geom = self.cadestral_layer.feature_dict[polygon_id].geometry()
+	def generate_output_points_for_cadastral_plots(self):
+		output_cadastral_points = []
+		for polygon_id in self.cadastral_layer.feature_dict:
+			qgsPoint = self.cadastral_layer.feature_dict[polygon_id].geometry().centroid().asPoint()
+			polygon_geom = self.cadastral_layer.feature_dict[polygon_id].geometry()
 			if polygon_geom.contains(qgsPoint):
 				point = Point(qgsPoint)
 			else:
@@ -332,9 +336,9 @@ class KharifModelCalculator:
 						polygon_intersection_some_zone = polygon_geom.intersection(feature.geometry())
 						point = Point(polygon_intersection_some_zone.pointOnSurface().asPoint())
 						break
-			point.cadestral_polygon = self.cadestral_layer.feature_dict[polygon_id]
-			output_cadestral_points.append(point)
-		return output_cadestral_points
+			point.cadastral_polygon = self.cadastral_layer.feature_dict[polygon_id]
+			output_cadastral_points.append(point)
+		return output_cadastral_points
 	
 	def set_container_polygon_of_points_for_layers(self, points, polygon_vector_layers):
 		for layer in polygon_vector_layers:
@@ -388,14 +392,14 @@ class KharifModelCalculator:
 			else:
 				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index)
 		
-		self.filter_out_cadestral_plots_outside_boundary()
-		self.output_cadestral_points = self.generate_output_points_for_cadestral_plots()
-		self.set_container_polygon_of_points_for_layers(self.output_cadestral_points, [self.soil_layer, self.lulc_layer])
-		self.output_cadestral_points = filter(lambda p:	p.lulc_type not in ['water','habitation'], self.output_cadestral_points)
-		print 'Number of cadestral points to process : ', len(self.output_cadestral_points)
-		self.set_slope_at_points(self.output_cadestral_points)
+		self.filter_out_cadastral_plots_outside_boundary()
+		self.output_cadastral_points = self.generate_output_points_for_cadastral_plots()
+		self.set_container_polygon_of_points_for_layers(self.output_cadastral_points, [self.soil_layer, self.lulc_layer])
+		self.output_cadastral_points = filter(lambda p:	p.lulc_type not in ['water','habitation'], self.output_cadastral_points)
+		print 'Number of cadastral points to process : ', len(self.output_cadastral_points)
+		self.set_slope_at_points(self.output_cadastral_points)
 		count = 0
-		for point in self.output_cadestral_points:
+		for point in self.output_cadastral_points:
 			count += 1
 			if count % 10 == 0:	print count
 			if point.lulc_type in ['agriculture', 'fallow land']:

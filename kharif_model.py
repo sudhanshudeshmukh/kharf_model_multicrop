@@ -199,7 +199,7 @@ class KharifModel:
 			paths = [base_path	for base_path in os.listdir(TEST_SUITE_BASE_FOLDER_PATH)	if os.path.isdir(base_path)]
 		
 		for path in paths:
-			self.fetch_inputs(path)
+			if self.fetch_inputs(path) is False:	return
 			
 			self.modelCalculator = KharifModelCalculator(self.et0, **self.input_layers)
 			self.modelCalculator.calculate(self.rain, self.crop_names)
@@ -223,8 +223,8 @@ class KharifModel:
 				sum(self.rain[START_DATE_INDEX : MONSOON_END_DATE_INDEX+1])
 			)
 		return
-		#~ op.output_cadestral_vulnerability_to_csv	(
-			#~ self.modelCalculator.output_cadestral_points,
+		#~ op.output_cadastral_vulnerability_to_csv	(
+			#~ self.modelCalculator.output_cadastral_points,
 			#~ os.path.join(self.base_path, CADESTRAL_VULNERABILITY_CSV_FILENAME)
 		#~ )
 		
@@ -271,7 +271,7 @@ class KharifModel:
 			self.input_layers['zones_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Zones.shp'), 'Zones', 'ogr')
 			self.input_layers['soil_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Soil.shp'), 'Soil Cover', 'ogr')
 			self.input_layers['lulc_layer'] = self.iface.addVectorLayer(os.path.join(path, 'LULC.shp'), 'Land-Use-Land-Cover', 'ogr')
-			self.input_layers['cadestral_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Cadestral.shp'), 'Cadestral Map', 'ogr')
+			self.input_layers['cadastral_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Cadastral.shp'), 'Cadastral Map', 'ogr')
 			self.input_layers['slope_layer'] = self.iface.addRasterLayer(os.path.join(path, 'Slope.tif'), 'Slope')
 			#~ self.input_layers['drainage_layer'] = self.iface.addRasterLayer(os.path.join(path, 'Drainage.shp'), 'Drainage', 'ogr')
 			
@@ -280,6 +280,7 @@ class KharifModel:
 			self.et0 = set_et0_from_et0_file_data(et0_file_data)
 			if not OVERRIDE_FILECROPS_BY_DEBUG_OR_TEST_CROPS and os.path.exists(os.path.join(path, CROPS_FILENAME)):
 				self.crop_names = open(os.path.join(path, CROPS_FILENAME), 'r').read().split(',')
+				if len(self.crop_names) == 0 :	raise Exception('No crop selected')
 			else:
 				self.crop_names = DEBUG_OR_TEST_CROPS
 			#~ self.output_configuration = {}
@@ -287,7 +288,7 @@ class KharifModel:
 			
 		else:
 			self.dlg.show()
-			if self.dlg.exec_() == QFileDialog.Rejected:	return
+			if self.dlg.exec_() == QFileDialog.Rejected:	return False
 			
 			path = self.base_path = self.dlg.folder_path.text()
 			
@@ -295,16 +296,17 @@ class KharifModel:
 			self.input_layers['zones_layer'] = self.iface.addVectorLayer(self.dlg.zones_layer_filename.text(), 'Zones', 'ogr')
 			self.input_layers['soil_layer'] = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
 			self.input_layers['lulc_layer'] = self.iface.addVectorLayer(self.dlg.lulc_layer_filename.text(), 'Land-Use-Land-Cover', 'ogr')
-			self.input_layers['cadestral_layer'] = self.iface.addVectorLayer(self.dlg.cadestral_layer_filename.text(), 'Cadestral Map', 'ogr')
+			self.input_layers['cadastral_layer'] = self.iface.addVectorLayer(self.dlg.cadastral_layer_filename.text(), 'Cadastral Map', 'ogr')
 			self.input_layers['slope_layer'] = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
 			if self.dlg.drainage_layer_filename.text() != '':
 				self.input_layers['drainage_layer'] = self.iface.addRasterLayer(self.dlg.drainage_layer_filename.text(), 'Drainage', 'ogr')
 			
-			self.rain = [int(row["Rainfall"]) for row in csv.DictReader(open(self.dlg.rainfall_csv_filename.text()))]
+			self.rain = [int(row["Rainfall"]) for row in csv.DictReader(open(str(self.dlg.rainfall_csv_filename.text())))]
 			et0_file_data = [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
 			self.et0 = set_et0_from_et0_file_data(et0_file_data)
 			
 			self.crop_names = self.dlg.crops
+			if len(self.crop_names) == 0:    raise Exception('No crop selected')
 			#~ self.output_configuration = {}
 			#~ self.output_configuration['graduated_rendering_interval_points'] = [
 				#~ int(self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')[0])

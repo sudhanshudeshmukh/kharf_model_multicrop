@@ -1,4 +1,4 @@
-PLUGIN_MODE = 'DEBUG'	#	Possible values: 'DEBUG', 'TEST-SUITE', 'REAL'
+PLUGIN_MODE = 'REAL'	#	Possible values: 'DEBUG', 'TEST-SUITE', 'REAL'
 
 #	Set the following for debugging or testing mode
 DEBUG_BASE_FOLDER_PATH = 'C:\Users\Rahul\Desktop\Gondala1'
@@ -13,7 +13,7 @@ POINTWISE_OUTPUT_CSV_FILENAME = 'kharif_model_pointwise_output.csv'
 ZONEWISE_BUDGET_CSV_FILENAME = 'kharif_model_zonewise_budget.csv'
 CADESTRAL_VULNERABILITY_CSV_FILENAME = 'kharif_model_cadestral_vulnerability.csv'
 #	Optional inputs for debugging/testing
-OVERRIDE_FILECROPS_BY_DEBUG_OR_TEST_CROPS = True
+OVERRIDE_FILECROPS_BY_DEBUG_OR_TEST_CROPS = False
 CROPS_FILENAME = 'crops.csv'
 
 #	Computation Settings

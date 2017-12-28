@@ -27,6 +27,7 @@ dict_lulc = {
 	'waterbodies-reservoir/tanks-dry-rabi extent': 'water',
 	'agricultural land-crop land-zaid crop': 'agriculture',
 	'waterbodies-reservoir/tanks-dry-kharif extent': 'water',
+	'waterbodies-canal/drain-lined': 'water',
 	'agricultural land-crop land-two crop area': 'agriculture',
 	'built up-built up (urban)-vegetated area': 'habitation',
 	'wastelands-barren rocky/stony waste': 'scrub dense',
