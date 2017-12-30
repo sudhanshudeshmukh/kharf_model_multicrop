@@ -249,7 +249,10 @@ class KharifModelCalculator:
 	The actual algorithm for calculating results of the Kharif Model
 	"""
 	
-	def __init__(self, et0, zones_layer, soil_layer, lulc_layer, cadastral_layer, slope_layer):
+	def __init__(self, path, et0, zones_layer, soil_layer, lulc_layer, cadastral_layer, slope_layer):
+
+		self.path = path
+
 		self.zones_layer = VectorLayer(zones_layer, BOUNDARY_LABEL)
 		self.soil_layer = VectorLayer(soil_layer, SOIL_LABEL)
 		self.lulc_layer = VectorLayer(lulc_layer, LULC_LABEL)
@@ -349,8 +352,32 @@ class KharifModelCalculator:
 		for point in points:
 			point.slope = self.slope_layer.dataProvider().identify(
 							point.qgsPoint, QgsRaster.IdentifyFormatValue).results()[1]
-	
-	def calculate(self, 
+
+	def filter_out_points_with_incomplete_data(self, points):
+		log_file = open(os.path.join(self.path, 'log'), 'a')
+		log_file.write(time.ctime(time.time()) + '\n')
+		filtered_points = []
+		for point in points:
+			if (None not in [
+				point.container_polygons[SOIL_LABEL],
+				point.container_polygons[LULC_LABEL],
+				point.slope
+			]):
+				filtered_points.append(point)
+			else:
+				if point.container_polygons[SOIL_LABEL] is None:
+					log_file.write('Soil polygon could not be obtained for point at: x = '
+								   + str(point.qgsPoint.x()) + ', y = ' + str(point.qgsPoint.y()))
+				if point.container_polygons[LULC_LABEL] is None:
+					log_file.write('LULC polygon could not be obtained for point at: x = '
+								   + str(point.qgsPoint.x()) + ', y = ' + str(point.qgsPoint.y()))
+				if point.slope is None:
+					log_file.write('Slope could not be obtained for point at: x = '
+								   + str(point.qgsPoint.x()) + ', y = ' + str(point.qgsPoint.y()))
+		log_file.close()
+		return filtered_points
+
+	def calculate(self,
 					rain,
 					crop_names,
 					start_date_index=START_DATE_INDEX,
@@ -377,12 +404,15 @@ class KharifModelCalculator:
 		
 		self.output_grid_points = self.generate_output_points_grid()
 		self.filter_out_points_outside_boundary()
-		self.set_container_polygon_of_points_for_layers(self.output_grid_points, [self.soil_layer, self.lulc_layer])
+		self.set_container_polygon_of_points_for_layers(self.output_grid_points, [self.soil_layer, self.lulc_layer, self.cadastral_layer])
+		self.set_slope_at_points(self.output_grid_points)
+		self.output_grid_points = self.filter_out_points_with_incomplete_data(self.output_grid_points)
+		for zone_id in self.zone_points_dict:
+			self.zone_points_dict[zone_id] = self.filter_out_points_with_incomplete_data(self.zone_points_dict[zone_id])
 		self.output_grid_points = filter(lambda p:	p.lulc_type not in ['water','habitation'], self.output_grid_points)
 		print 'Number of grid points to process : ', len(self.output_grid_points)
 		for zone_id in self.zone_points_dict:
 			self.zone_points_dict[zone_id] = filter(lambda p:	p.lulc_type not in ['water','habitation'], self.zone_points_dict[zone_id])
-		self.set_slope_at_points(self.output_grid_points)
 		count = 0
 		for point in self.output_grid_points:
 			count += 1
@@ -395,9 +425,10 @@ class KharifModelCalculator:
 		self.filter_out_cadastral_plots_outside_boundary()
 		self.output_cadastral_points = self.generate_output_points_for_cadastral_plots()
 		self.set_container_polygon_of_points_for_layers(self.output_cadastral_points, [self.soil_layer, self.lulc_layer])
+		self.set_slope_at_points(self.output_cadastral_points)
+		self.output_cadastral_points = self.filter_out_points_with_incomplete_data(self.output_cadastral_points)
 		self.output_cadastral_points = filter(lambda p:	p.lulc_type not in ['water','habitation'], self.output_cadastral_points)
 		print 'Number of cadastral points to process : ', len(self.output_cadastral_points)
-		self.set_slope_at_points(self.output_cadastral_points)
 		count = 0
 		for point in self.output_cadastral_points:
 			count += 1

@@ -20,6 +20,7 @@ dict_lulc = {
 	'agricultural land-crop land-kharif crop': 'agriculture',
 	'agricultural land-fallow-current fallow': 'fallow land',
 	'wastelands-scrub land-open scrub': 'scrub open',
+	'wastelands-gullied/ravinous land-gullied': 'scrub open',
 	'forest-deciduous (dry/moist/thorn)-dense/closed': 'deciduous - dense',
 	'wastelands-scrub land-dense scrub': 'scrub dense',
 	'built up-built up (rural)-built up area (rural)': 'habitation',

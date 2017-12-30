@@ -201,11 +201,11 @@ class KharifModel:
 		for path in paths:
 			if self.fetch_inputs(path) is False:	return
 			
-			self.modelCalculator = KharifModelCalculator(self.et0, **self.input_layers)
+			self.modelCalculator = KharifModelCalculator(path, self.et0, **self.input_layers)
 			self.modelCalculator.calculate(self.rain, self.crop_names)
 			
 			pointwise_output_csv_filepath = os.path.join(self.base_path, POINTWISE_OUTPUT_CSV_FILENAME)
-			
+
 			op = KharifModelOutputProcessor()
 			op.output_point_results_to_csv	(
 				self.modelCalculator.output_grid_points,
@@ -222,37 +222,44 @@ class KharifModel:
 				os.path.join(self.base_path, ZONEWISE_BUDGET_CSV_FILENAME),
 				sum(self.rain[START_DATE_INDEX : MONSOON_END_DATE_INDEX+1])
 			)
-		return
-		#~ op.output_cadastral_vulnerability_to_csv	(
-			#~ self.modelCalculator.output_cadastral_points,
-			#~ os.path.join(self.base_path, CADESTRAL_VULNERABILITY_CSV_FILENAME)
-		#~ )
-		
-		#~ kharif_model_crop_end_output_layer = \
-			#~ op.render_and_save_pointwise_output_layer(
-				#~ pointwise_output_csv_filepath,
-				#~ 'Kharif Model Crop End Output',
-				#~ 'Crop duration PET-AET',
-				#~ self.output_configuration['graduated_rendering_interval_points'],
-				#~ shapefile_path=os.path.join(self.base_path, 'kharif_crop_duration_et_deficit.shp')
-			#~ )
-		#~ if(crop in long_kharif_crops):
-			#~ kharif_model_monsoon_end_output_layer = \
-				#~ op.render_and_save_pointwise_output_layer(
-					#~ pointwise_output_csv_filepath,
-					#~ 'Kharif Model Monsoon End Output',
-					#~ 'Monsoon PET-AET',
-					#~ self.output_configuration['graduated_rendering_interval_points'],
-					#~ shapefile_path=os.path.join(self.base_path, 'kharif_monsoon_et_deficit.shp')
-				#~ )
-		
-		#~ self.iface.actionHideAllLayers().trigger()
-		#~ self.iface.legendInterface().setLayerVisible(self.input_layers['zones_layer'], True)
-		#~ if 'drainage_layer' in locals():	self.iface.legendInterface().setLayerVisible(self.input_layers['drainage_layer'], True)
-		#~ if (crop in long_kharif_crops):		self.iface.legendInterface().setLayerVisible(kharif_model_monsoon_end_output_layer, True)
-		#~ self.iface.legendInterface().setLayerVisible(kharif_model_crop_end_output_layer, True)
-		#~ self.iface.mapCanvas().setExtent(self.input_layers['zones_layer'].extent())
-		#~ self.iface.mapCanvas().mapRenderer().setDestinationCrs(self.input_layers['zones_layer'].crs())
+			op.compute_and_output_cadastral_vulnerability_to_csv(
+				self.crop_names,
+				self.modelCalculator.output_cadastral_points,
+				os.path.join(self.base_path, CADESTRAL_VULNERABILITY_CSV_FILENAME)
+			)
+			# kharif_model_crop_end_output_layer = \
+			# 	op.render_and_save_pointwise_output_layer(
+			# 		pointwise_output_csv_filepath,
+			# 		'Kharif Model Crop End Output',
+			# 		'Crop duration PET-AET',
+			# 		self.output_configuration['graduated_rendering_interval_points'],
+			# 		shapefile_path=os.path.join(self.base_path, 'kharif_crop_duration_et_deficit.shp')
+			# 	)
+			# if(crop in long_kharif_crops):
+			# 	kharif_model_monsoon_end_output_layer = \
+			# 		op.render_and_save_pointwise_output_layer(
+			# 			pointwise_output_csv_filepath,
+			# 			'Kharif Model Monsoon End Output',
+			# 			'Monsoon PET-AET',
+			# 			self.output_configuration['graduated_rendering_interval_points'],
+			# 			shapefile_path=os.path.join(self.base_path, 'kharif_monsoon_et_deficit.shp')
+			# 		)
+			for i in range(len(self.crop_names)):
+				op.compute_and_display_cadastral_vulnerability(
+					self.modelCalculator.cadastral_layer,
+					self.modelCalculator.output_grid_points,
+					self.modelCalculator.output_cadastral_points,
+					i,
+					self.crop_names[i],
+					path
+				)
+	# self.iface.actionHideAllLayers().trigger()
+	# 	self.iface.legendInterface().setLayerVisible(self.input_layers['zones_layer'], True)
+	# 	if 'drainage_layer' in locals():	self.iface.legendInterface().setLayerVisible(self.input_layers['drainage_layer'], True)
+	# 	if (crop in long_kharif_crops):		self.iface.legendInterface().setLayerVisible(kharif_model_monsoon_end_output_layer, True)
+	# 	self.iface.legendInterface().setLayerVisible(kharif_model_crop_end_output_layer, True)
+	# 	self.iface.mapCanvas().setExtent(self.input_layers['zones_layer'].extent())
+	# 	self.iface.mapCanvas().mapRenderer().setDestinationCrs(self.input_layers['zones_layer'].crs())
 
 		#~ if self.dlg.save_image_group_box.isChecked():
 			#~ QTimer.singleShot(1000, lambda :	self.iface.mapCanvas().saveAsImage(self.dlg.save_image_filename.text()))
@@ -283,8 +290,8 @@ class KharifModel:
 				if len(self.crop_names) == 0 :	raise Exception('No crop selected')
 			else:
 				self.crop_names = DEBUG_OR_TEST_CROPS
-			#~ self.output_configuration = {}
-			#~ self.output_configuration['graduated_rendering_interval_points'] = DEBUG_GRADUATED_RENDERING_INTERVAL_POINTS
+			self.output_configuration = {}
+			self.output_configuration['graduated_rendering_interval_points'] = DEBUG_OR_TEST_GRADUATED_RENDERING_INTERVAL_POINTS
 			
 		else:
 			self.dlg.show()
@@ -307,9 +314,9 @@ class KharifModel:
 			
 			self.crop_names = self.dlg.crops
 			if len(self.crop_names) == 0:    raise Exception('No crop selected')
-			#~ self.output_configuration = {}
-			#~ self.output_configuration['graduated_rendering_interval_points'] = [
-				#~ int(self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')[0])
-					#~ for i in range(1,self.dlg.colour_code_intervals_list_widget.count())
-			#~ ]
+			self.output_configuration = {}
+			self.output_configuration['graduated_rendering_interval_points'] = [
+				int(self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')[0])
+					for i in range(1,self.dlg.colour_code_intervals_list_widget.count())
+			]
 	

@@ -4,9 +4,10 @@ from collections import OrderedDict
 import numpy as np
 from constants_dicts_lookups import *
 from kharif_model_calculator import *
+from qgis.core import QgsVectorLayer, QgsFeature, QgsField, QgsMapLayerRegistry, QgsSymbolV2, QgsRendererRangeV2, QgsGraduatedSymbolRendererV2, QgsVectorFileWriter
 
 class KharifModelOutputProcessor:
-	
+
 	def output_point_results_to_csv(self, output_grid_points, pointwise_output_csv_filepath, crops):
 		"""
 		#~ <all_crops> includes actual (selected) crops and also pseudo-crops
@@ -178,3 +179,120 @@ class KharifModelOutputProcessor:
 			QgsVectorFileWriter.writeAsVectorFormat(output_layer, shapefile_path, "utf-8", None, "ESRI Shapefile")
 		
 		return output_layer
+
+	def compute_and_output_cadastral_vulnerability_to_csv(self, crop_names, output_cadastral_points, cadastral_vulnerability_csv_filepath):
+		plot_vulnerability_dict = {
+			p.cadastral_polygon.id():
+				[
+					(
+						p.budget.PET_minus_AET_crop_end[i],
+						p.budget.PET_minus_AET_monsoon_end[i]
+					)
+					for i in range(len(crop_names))
+				]
+				for p in output_cadastral_points
+					if p.lulc_type in ['agriculture', 'fallow land']
+		}
+		sorted_keys = sorted(plot_vulnerability_dict.keys(), key=lambda ID: plot_vulnerability_dict[ID], reverse=True)
+		csvwrite = open(cadastral_vulnerability_csv_filepath, 'w+b')
+		writer = csv.writer(csvwrite)
+		writer.writerow(['Plot ID'] +
+						list(itertools.chain(*[
+								[
+									crop + ' Crop end Deficit',
+									crop + ' Crop end Deficit Waterings',
+									crop + ' Monsoon end Deficit',
+									crop + ' Monsoon end Deficit Waterings'
+								]
+								for crop in crop_names
+							])
+						)
+		)
+		for key in sorted_keys:
+			writer.writerow([key] +
+							list(itertools.chain(*[
+									[
+										'{0:.2f}'.format(plot_vulnerability_dict[key][i][0]),
+										round((plot_vulnerability_dict[key][i][0]) / 50),
+										'{0:.2f}'.format(plot_vulnerability_dict[key][i][1]),
+										round((plot_vulnerability_dict[key][i][1]) / 50)
+									]
+									for i in range(len(crop_names))
+								])
+						 	)
+			)
+		csvwrite.close()
+
+	def compute_and_display_cadastral_vulnerability(self, cadastral_layer, output_grid_points, output_cadastral_points, crop_index, crop_name, base_path):
+		cadastral_points_per_plot = {}
+		for p in (output_grid_points + output_cadastral_points):
+			if p.cadastral_polygon is None:    continue
+			if p.lulc_type	not in ['agriculture', 'fallow land']:	continue
+			if p.cadastral_polygon.id() in cadastral_points_per_plot:
+				cadastral_points_per_plot[p.cadastral_polygon.id()].append(
+					p.budget.PET_minus_AET_crop_end[crop_index])
+			else:
+				cadastral_points_per_plot[p.cadastral_polygon.id()] = [
+					p.budget.PET_minus_AET_crop_end[crop_index]]
+		for k, v in cadastral_points_per_plot.items():
+			if len(v) > 0:
+				cadastral_points_per_plot[k] = sum(v) / len(v)
+			else:
+				del cadastral_points_per_plot[k]
+
+		# print cadastral_points_per_plot
+		#	Create duplicate cadastral layer in memory
+		memory_cadastral_layer = QgsVectorLayer('Polygon?crs=epsg:32643', crop_name + ' Cadastral Level Vulnerability', 'memory')
+		memory_cadastral_layer.startEditing()
+		memory_cadastral_layer.dataProvider().addAttributes(
+			cadastral_layer.qgsLayer.dataProvider().fields().toList())
+		memory_cadastral_layer.updateFields()
+		dict_new_feature_id_to_old_feature_id = {}
+		for old_plot_id in cadastral_points_per_plot:
+			result, output_features = memory_cadastral_layer.dataProvider().addFeatures(
+				[cadastral_layer.feature_dict[old_plot_id]])
+			dict_new_feature_id_to_old_feature_id[output_features[0].id()] = old_plot_id
+		memory_cadastral_layer.dataProvider().addAttributes([QgsField('Deficit', QVariant.Double)])
+		memory_cadastral_layer.updateFields()
+		for new_feature in memory_cadastral_layer.getFeatures():
+			new_feature['Deficit'] = cadastral_points_per_plot[
+				dict_new_feature_id_to_old_feature_id[new_feature.id()]]
+			memory_cadastral_layer.updateFeature(new_feature)
+		memory_cadastral_layer.commitChanges()
+
+		#	Graduated Rendering
+		graduated_symbol_renderer_range_list = []
+		ET_D_max = max(cadastral_points_per_plot.values())
+		opacity = 1
+		geometry_type = memory_cadastral_layer.geometryType()
+		intervals_count = CADASTRAL_VULNERABILITY_DISPLAY_COLOUR_INTERVALS_COUNT
+		dict_interval_colour = CADASTRAL_VULNERABILITY_DISPLAY_COLOURS_DICT
+		for i in range(intervals_count):
+			interval_min = 0 if i == 0 else (ET_D_max * float(
+				i) / intervals_count) + 0.01
+			interval_max = ET_D_max * float(i + 1) / intervals_count
+			label = "{0:.2f} - {1:.2f}".format(interval_min, interval_max)
+			colour = QColor(*dict_interval_colour[i])
+			symbol = QgsSymbolV2.defaultSymbol(geometry_type)
+			symbol.setColor(colour)
+			symbol.setAlpha(opacity)
+			interval_range = QgsRendererRangeV2(interval_min, interval_max, symbol, label)
+			graduated_symbol_renderer_range_list.append(interval_range)
+		renderer = QgsGraduatedSymbolRendererV2('', graduated_symbol_renderer_range_list)
+		renderer.setMode(QgsGraduatedSymbolRendererV2.EqualInterval)
+		renderer.setClassAttribute('Deficit')
+		memory_cadastral_layer.setRendererV2(renderer)
+
+		QgsMapLayerRegistry.instance().addMapLayer(memory_cadastral_layer)
+		memory_cadastral_layer.setCustomProperty('labeling', 'pal')
+		memory_cadastral_layer.setCustomProperty('labeling/enabled', 'true')
+		memory_cadastral_layer.setCustomProperty('labeling/fieldName', 'Number')
+		memory_cadastral_layer.setCustomProperty('labeling/fontSize', '10')
+		memory_cadastral_layer.setCustomProperty('labeling/placement', '0')
+
+		memory_cadastral_layer.dataProvider().forceReload()
+		memory_cadastral_layer.triggerRepaint()
+
+		QgsVectorFileWriter.writeAsVectorFormat(memory_cadastral_layer,
+												base_path + '/kharif_'+crop_name+'_cadastral_level_vulnerability.shp', "utf-8", None,
+												"ESRI Shapefile")
