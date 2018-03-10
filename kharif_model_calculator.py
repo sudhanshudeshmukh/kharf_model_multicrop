@@ -23,7 +23,6 @@ SOIL_LABEL = 'Soil'
 LULC_LABEL = 'Land-Use-Land-Cover'
 SLOPE_LABEL = 'Slope'
 CADASTRAL_LABEL = 'Cadastral'
-i=0
 class Budget:
 	
 	def __init__(self):
