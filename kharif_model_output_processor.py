@@ -45,25 +45,37 @@ class KharifModelOutputProcessor:
 							)
 		csvwrite.close()
 	
-	def compute_zonewise_budget(self, zone_points_dict):
+	def compute_zonewise_budget(self, zone_points_dict, zones_layer):
 		zonewise_budgets = OrderedDict()
+		self.zone_area =OrderedDict()
 		for zone_id in zone_points_dict:
 			zone_points = zone_points_dict[zone_id]
 			no_of_zone_points = len(zone_points)
 			if no_of_zone_points == 0:	continue
 			
-			zonewise_budgets[zone_id] = {}
+			if(zones_layer.qgsLayer.fieldNameIndex('Zone_name') != -1):
+				zone_name = zones_layer.feature_dict[zone_id]['Zone_name']
+			else:
+				zone_name = zone_id
+			zonewise_budgets[zone_name] = {}
 			
 			all_agricultural_points = filter(lambda p:	p.lulc_type in ['agriculture', 'fallow land'], zone_points)
 			non_agricultural_points_dict = {lulc_type: filter(lambda p:	p.lulc_type == lulc_type, zone_points)	for lulc_type in dict_LULC_pseudo_crop}
 			
 			no_of_agricultural_points = len(all_agricultural_points)
-			zb = zonewise_budgets[zone_id]['agricultural'] = Budget()
+			zb = zonewise_budgets[zone_name]['agricultural'] = Budget()
+			zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
+			zb.AET_monsoon_end = np.sum([p.budget.AET_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
 			zb.runoff_monsoon_end = np.sum([p.budget.runoff_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
+			zb.runoff_crop_end = np.sum([p.budget.runoff_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
+			zb.runoff_total = np.sum([p.budget.runoff_total	for p in all_agricultural_points], 0) / no_of_agricultural_points			
+			zb.sm_monsoon_end = np.sum([p.budget.sm_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
 			zb.sm_crop_end = np.sum([p.budget.sm_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
 			zb.infil_monsoon_end = np.sum([p.budget.infil_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
 			zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
 			zb.GW_rech_monsoon_end = np.sum([p.budget.GW_rech_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
+			zb.GW_rech_crop_end = np.sum([p.budget.GW_rech_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
+			zb.GW_rech_total = np.sum([p.budget.GW_rech_total	for p in all_agricultural_points], 0) / no_of_agricultural_points
 			zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
 			zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
 			
@@ -72,16 +84,26 @@ class KharifModelOutputProcessor:
 				lulc_type_points = non_agricultural_points_dict[lulc_type]
 				no_of_non_ag_lulc_type_points[lulc_type] = len(lulc_type_points)
 				if no_of_non_ag_lulc_type_points[lulc_type] == 0:	continue
-				
-				zb = zonewise_budgets[zone_id][lulc_type] = Budget()
-				zb.sm_crop_end = np.sum([p.budget.sm_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-				zb.runoff_monsoon_end = np.sum([p.budget.runoff_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-				zb.infil_monsoon_end = np.sum([p.budget.infil_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
+
+				zb = zonewise_budgets[zone_name][lulc_type] = Budget()
+				zb.AET_monsoon_end = np.sum([p.budget.AET_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
 				zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
+				zb.runoff_monsoon_end = np.sum([p.budget.runoff_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
+				zb.runoff_crop_end = np.sum([p.budget.runoff_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
+				zb.runoff_total = np.sum([p.budget.runoff_total	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
+				zb.sm_monsoon_end = np.sum([p.budget.sm_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
+				zb.sm_crop_end = np.sum([p.budget.sm_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
+				zb.infil_monsoon_end = np.sum([p.budget.infil_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]				
 				zb.GW_rech_monsoon_end = np.sum([p.budget.GW_rech_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
+				zb.GW_rech_crop_end = np.sum([p.budget.GW_rech_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]				
+				zb.GW_rech_total = np.sum([p.budget.GW_rech_total	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]				
 				zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
 				zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
 			
+			self.zone_area[zone_name] = zones_layer.feature_dict[zone_id].geometry().area()/10000
+
+
+
 			#~ zb = Budget()
 			#~ zb.sm_crop_end = sum([p.budget.sm_crop_end	for p in zone_points]) / no_of_zone_points
 			#~ zb.runoff_monsoon_end = sum([p.budget.runoff_monsoon_end	for p in zone_points]) / no_of_zone_points
@@ -91,13 +113,123 @@ class KharifModelOutputProcessor:
 			#~ zb.PET_minus_AET_monsoon_end = sum([p.budget.PET_minus_AET_monsoon_end	for p in zone_points]) / no_of_zone_points
 			#~ zb.PET_minus_AET_crop_end = sum([p.budget.PET_minus_AET_crop_end	for p in zone_points]) / no_of_zone_points
 			#~ zonewise_budgets[zone_id]['zone'] = {'overall':zb}  # dict {'overall':zb} assigned instead of simple zb for convenience in iterating with ag and non-ag
-			
-			return zonewise_budgets
+		'''for i in zonewise_budgets:
+			print (i)
+			for j in  zonewise_budgets[i]:
+				print (j)
+				print vars(zonewise_budgets[i][j])
+				print("###")
+		print("---")'''
+		return zonewise_budgets
 	
 	def output_zonewise_budget_to_csv(self, zonewise_budgets, crops, pseudo_crops, zonewise_budget_csv_filepath, rain_sum):
 		csvwrite = open(zonewise_budget_csv_filepath,'wb')
 		writer = csv.writer(csvwrite)
-		writer.writerow(['']
+		rows =[]
+
+		rows.append(['Village Name']
+			+ [str(ID).rsplit('-',1)[0] for ID in zonewise_budgets	for crop in crops]
+			+ [str(ID).rsplit('-',1)[0] for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			)
+
+		rows.append(['Zone']
+			+ ['zone-'+str(ID)	for ID in zonewise_budgets	for crop in crops]
+			+ ['zone-'+str(ID)	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+		
+		rows.append(['Zone Area (ha)']
+			+ [self.zone_area[ID]	for ID in zonewise_budgets	for crop in crops]
+			+ [self.zone_area[ID]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+		
+		rows.append(['Crops']
+			+ [crop.name	for ID in zonewise_budgets	for crop in crops]
+			+ [pseudo_crop.name	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+
+		rows.append(['Rainfall (mm)']
+			+ [rain_sum	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [rain_sum	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+		
+		rows.append(['PET Monsoon End']
+			+ [crop.PET_sum_monsoon	for ID in zonewise_budgets	for crop in crops]
+			+ [pseudo_crop.PET_sum_monsoon	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+
+		rows.append(['AET Monsoon End']
+			+ [zonewise_budgets[ID]['agricultural'].AET_monsoon_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].AET_monsoon_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+
+		rows.append(['Monsoon Deficit(PET-AET)']
+			+ [zonewise_budgets[ID]['agricultural'].PET_minus_AET_monsoon_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].PET_minus_AET_monsoon_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+		rows.append(['GW Recharge in Monsoon']
+			+ [zonewise_budgets[ID]['agricultural'].GW_rech_monsoon_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].GW_rech_monsoon_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+		rows.append(['Runoff in Monsoon (mm)']
+			+ [zonewise_budgets[ID]['agricultural'].runoff_monsoon_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].runoff_monsoon_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+		
+		rows.append(['Soil Moisture Monsoon end']
+			+ [zonewise_budgets[ID]['agricultural'].sm_monsoon_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].sm_monsoon_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+
+		rows.append(['Post Monsoon PET']
+			+ [crop.PET_sum_cropend	- crop.PET_sum_monsoon for ID in zonewise_budgets	for crop in crops]
+			+ [pseudo_crop.PET_sum_cropend - pseudo_crop.PET_sum_monsoon	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+		rows.append(['Infilitration in Monsoon (mm)']
+			+ [zonewise_budgets[ID]['agricultural'].infil_monsoon_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].infil_monsoon_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+
+
+		rows.append(['Soil Moisture Crop end']
+			+ [zonewise_budgets[ID]['agricultural'].sm_crop_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].sm_crop_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+
+		rows.append(['AET Crop End']
+			+ [zonewise_budgets[ID]['agricultural'].AET_crop_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].AET_crop_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+
+		rows.append(['PET Crop End']
+			+ [crop.PET_sum_cropend	for ID in zonewise_budgets	for crop in crops]
+			+ [pseudo_crop.PET_sum_cropend	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+		
+		rows.append(['Crop duration Deficit(PET-AET)']
+			+ [zonewise_budgets[ID]['agricultural'].PET_minus_AET_crop_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].PET_minus_AET_crop_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+		)
+
+		rows.append(['Post Monsoon Ground Water']
+			+ [zonewise_budgets[ID]['agricultural'].GW_rech_total[i] - zonewise_budgets[ID]['agricultural'].GW_rech_monsoon_end[i] for ID in zonewise_budgets for i in range (len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].GW_rech_total[0] - zonewise_budgets[ID][pseudo_crop.name].GW_rech_monsoon_end[0] for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID] ]
+			)
+
+		rows.append(['Post Monsoon Runoff']
+			+ [zonewise_budgets[ID]['agricultural'].runoff_total[i] - zonewise_budgets[ID]['agricultural'].runoff_monsoon_end[i] for ID in zonewise_budgets for i in range (len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].runoff_total[0] - zonewise_budgets[ID][pseudo_crop.name].runoff_monsoon_end[0] for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID] ]
+			)
+
+		cols = zip(*rows)
+		cols.sort(key =  lambda x: x[1])
+
+
+		writer.writerows(cols)
+		csvwrite.close()
+
+
+
+		'''writer.writerow(['']
 			+ ['zone-'+str(ID)+'-'+crop.name	for ID in zonewise_budgets	for crop in crops]
 			+ ['zone-'+str(ID)+'-'+pseudo_crop.name	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
@@ -136,8 +268,7 @@ class KharifModelOutputProcessor:
 		writer.writerow(['Crop duration Deficit(PET-AET)']
 			+ [zonewise_budgets[ID]['agricultural'].PET_minus_AET_crop_end[i]	for ID in zonewise_budgets	for i in range(len(crops))]
 			+ [zonewise_budgets[ID][pseudo_crop.name].PET_minus_AET_crop_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
-		)
-		csvwrite.close()
+		)'''
 	
 	def render_and_save_pointwise_output_layer(self,
 												pointwise_output_csv_filepath, 

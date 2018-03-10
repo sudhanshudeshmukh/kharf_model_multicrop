@@ -197,12 +197,11 @@ class KharifModel:
 		else:
 			if not os.path.exists(TEST_SUITE_BASE_FOLDER_PATH):	raise Exception('Set TEST_SUITE_BASE_FOLDER_PATH for the debug dataset')
 			paths = [base_path	for base_path in os.listdir(TEST_SUITE_BASE_FOLDER_PATH)	if os.path.isdir(base_path)]
-		
 		for path in paths:
 			if self.fetch_inputs(path) is False:	return
 			
-			self.modelCalculator = KharifModelCalculator(path, self.et0, **self.input_layers)
-			self.modelCalculator.calculate(self.rain, self.crop_names)
+			self.modelCalculator = KharifModelCalculator(self.path, self.et0, **self.input_layers)
+			self.modelCalculator.calculate(self.rain, self.crop_names, self.sowing_threshold, monsoon_end_date_index = self.monsoon_end_date_index)
 			
 			pointwise_output_csv_filepath = os.path.join(self.base_path, POINTWISE_OUTPUT_CSV_FILENAME)
 
@@ -213,14 +212,15 @@ class KharifModel:
 				crops=[crop.name for crop in self.modelCalculator.crops]
 			)
 			zonewise_budgets = op.compute_zonewise_budget	(
-				self.modelCalculator.zone_points_dict
+				self.modelCalculator.zone_points_dict , 
+				self.modelCalculator.zones_layer 
 			)
 			op.output_zonewise_budget_to_csv	(
 				zonewise_budgets,
 				self.modelCalculator.crops,
 				self.modelCalculator.LULC_pseudo_crops.values(),
 				os.path.join(self.base_path, ZONEWISE_BUDGET_CSV_FILENAME),
-				sum(self.rain[START_DATE_INDEX : MONSOON_END_DATE_INDEX+1])
+				sum(self.rain[START_DATE_INDEX : self.monsoon_end_date_index+1])
 			)
 			op.compute_and_output_cadastral_vulnerability_to_csv(
 				self.crop_names,
@@ -251,7 +251,7 @@ class KharifModel:
 					self.modelCalculator.output_cadastral_points,
 					i,
 					self.crop_names[i],
-					path
+					self.path
 				)
 	# self.iface.actionHideAllLayers().trigger()
 	# 	self.iface.legendInterface().setLayerVisible(self.input_layers['zones_layer'], True)
@@ -273,7 +273,7 @@ class KharifModel:
 				else:					et0.extend([et0_file_data[i]]*31)
 			return et0
 		if path != '':
-			self.base_path = path
+			self.base_path = self.path = path
 			self.input_layers = {}
 			self.input_layers['zones_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Zones.shp'), 'Zones', 'ogr')
 			self.input_layers['soil_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Soil.shp'), 'Soil Cover', 'ogr')
@@ -285,8 +285,11 @@ class KharifModel:
 			self.rain = [int(row["Rainfall"]) for row in csv.DictReader(open(os.path.join(path, RAINFALL_CSV_FILENAME)))]
 			et0_file_data = [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
 			self.et0 = set_et0_from_et0_file_data(et0_file_data)
+			self.sowing_threshold = DEFAULT_SOWING_THRESHOLD
+			self.monsoon_end_date_index = MONSOON_END_DATE_INDEX
 			if not OVERRIDE_FILECROPS_BY_DEBUG_OR_TEST_CROPS and os.path.exists(os.path.join(path, CROPS_FILENAME)):
 				self.crop_names = open(os.path.join(path, CROPS_FILENAME), 'r').read().split(',')
+				print (self.crop_names)
 				if len(self.crop_names) == 0 :	raise Exception('No crop selected')
 			else:
 				self.crop_names = DEBUG_OR_TEST_CROPS
@@ -297,8 +300,7 @@ class KharifModel:
 			self.dlg.show()
 			if self.dlg.exec_() == QFileDialog.Rejected:	return False
 			
-			path = self.base_path = self.dlg.folder_path.text()
-			
+			path = self.path = self.base_path = self.dlg.folder_path.text()
 			self.input_layers = {}
 			self.input_layers['zones_layer'] = self.iface.addVectorLayer(self.dlg.zones_layer_filename.text(), 'Zones', 'ogr')
 			self.input_layers['soil_layer'] = self.iface.addVectorLayer(self.dlg.soil_layer_filename.text(), 'Soil Cover', 'ogr')
@@ -307,11 +309,12 @@ class KharifModel:
 			self.input_layers['slope_layer'] = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
 			if self.dlg.drainage_layer_filename.text() != '':
 				self.input_layers['drainage_layer'] = self.iface.addRasterLayer(self.dlg.drainage_layer_filename.text(), 'Drainage', 'ogr')
-			
 			self.rain = [int(row["Rainfall"]) for row in csv.DictReader(open(str(self.dlg.rainfall_csv_filename.text())))]
 			et0_file_data = [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
 			self.et0 = set_et0_from_et0_file_data(et0_file_data)
-			
+			self.sowing_threshold = self.dlg.sowing_threshold.value()
+			self.monsoon_end_date_index = self.dlg.monsoon_end.value()+122
+
 			self.crop_names = self.dlg.crops
 			if len(self.crop_names) == 0:    raise Exception('No crop selected')
 			self.output_configuration = {}
@@ -319,4 +322,3 @@ class KharifModel:
 				int(self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')[0])
 					for i in range(1,self.dlg.colour_code_intervals_list_widget.count())
 			]
-	

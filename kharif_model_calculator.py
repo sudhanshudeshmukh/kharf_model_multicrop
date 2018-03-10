@@ -23,31 +23,36 @@ SOIL_LABEL = 'Soil'
 LULC_LABEL = 'Land-Use-Land-Cover'
 SLOPE_LABEL = 'Slope'
 CADASTRAL_LABEL = 'Cadastral'
-
-
+i=0
 class Budget:
 	
 	def __init__(self):
 		self.sm, self.runoff, self.infil, self.AET, self.GW_rech = [],[],[],[],[]
-	
-	def summarize(self, crops, start_date_index, end_date_index):
-		self.runoff = np.array(self.runoff)
+		
+	def summarize(self, crops, start_date_index, end_date_index , monsoon_end_date_index):
+		self.runoff = np.array(self.runoff)	
 		self.infil = np.array(self.infil)
 		self.AET = np.array(self.AET)
 		self.GW_rech = np.array(self.GW_rech)
+		self.sm = np.array(self.sm)
 		self.sm_crop_end = np.array([self.sm[crops[i].end_date_index][i]	for i in range(len(crops))])
- 		self.sm_monsoon_end = self.sm[MONSOON_END_DATE_INDEX]
+ 		self.sm_monsoon_end = np.array([self.sm[monsoon_end_date_index][i]	for i in range(len(crops))])
 		self.runoff_crop_end = [np.sum(self.runoff[start_date_index:crops[i].end_date_index+1,i])	for i in range(len(crops))]
-		self.runoff_monsoon_end = np.sum(self.runoff[start_date_index:MONSOON_END_DATE_INDEX+1], 1)
+		self.runoff_monsoon_end = [np.sum(self.runoff[start_date_index:monsoon_end_date_index+1,i])	for i in range(len(crops))]
+		self.runoff_total = [np.sum(self.runoff[start_date_index:end_date_index+1,i])	for i in range(len(crops))]
 		self.infil_crop_end = [np.sum(self.infil[start_date_index:crops[i].end_date_index+1,i])	for i in range(len(crops))]
-		self.infil_monsoon_end = np.sum(self.infil[start_date_index:MONSOON_END_DATE_INDEX+1], 1)
+		self.infil_monsoon_end = [np.sum(self.infil[start_date_index:monsoon_end_date_index+1,i]) for i in range(len(crops))]
 		self.AET_crop_end = [np.sum(self.AET[start_date_index:crops[i].end_date_index+1,i])	for i in range(len(crops))]
-		self.AET_monsoon_end = np.sum(self.AET[start_date_index:MONSOON_END_DATE_INDEX+1], 1)
+		self.AET_monsoon_end = [np.sum(self.AET[start_date_index:monsoon_end_date_index+1,i])	for i in range(len(crops))]
 		self.GW_rech_crop_end = [np.sum(self.GW_rech[start_date_index:crops[i].end_date_index+1,i])	for i in range(len(crops))]
-		self.GW_rech_monsoon_end = np.sum(self.GW_rech[start_date_index:MONSOON_END_DATE_INDEX+1], 1)
+		self.GW_rech_monsoon_end = [np.sum(self.GW_rech[start_date_index:monsoon_end_date_index+1,i])	for i in range(len(crops))]
+		self.GW_rech_total = [np.sum(self.GW_rech[start_date_index:end_date_index+1,i])	for i in range(len(crops))]
 		self.PET_minus_AET_monsoon_end = np.array([crops[i].PET_sum_monsoon - self.AET_monsoon_end[i]	for i in range(len(crops))])
 		self.PET_minus_AET_post_monsoon = np.array([(crops[i].PET_sum_cropend - self.AET_crop_end[i])-self.PET_minus_AET_monsoon_end[i]	for i in range(len(crops))])
 		self.PET_minus_AET_crop_end = np.array([crops[i].PET_sum_cropend - self.AET_crop_end[i]		for i in range(len(crops))])
+		
+
+
 	
 
 class Crop:
@@ -111,7 +116,7 @@ class Point:
 	@cadastral_polygon.setter
 	def cadastral_polygon(self, polygon):	self.container_polygons[CADASTRAL_LABEL] = polygon
 	
-	def run_model(self, rain, crops, start_date_index, end_date_index):
+	def run_model(self, rain, crops, start_date_index, end_date_index, monsoon_end_date_index):
 		
 		self.setup_for_daily_computations(crops)
 		
@@ -124,7 +129,7 @@ class Point:
 			self.secondary_runoff(day)
 			self.percolation_to_GW(day)
 
-		self.budget.summarize(crops, start_date_index, end_date_index)
+		self.budget.summarize(crops, start_date_index, end_date_index, monsoon_end_date_index)
 	
 	def setup_for_daily_computations(self, crops):
 		"""
@@ -272,11 +277,11 @@ class KharifModelCalculator:
 	@property
 	def lulc_types(self):	return dict_RO.keys()
 		
-	def set_PET_and_end_date_index_of_crops(self, et0):
+	def set_PET_and_end_date_index_of_crops(self, et0, sowing_threshold):
 		def compute_sowing_index():
 			rain_sum = 0
 			for i in range (0,len(self.rain)):
-				if (rain_sum < SOWING_THRESHOLD):	rain_sum += self.rain[i]
+				if (rain_sum < sowing_threshold):	rain_sum += self.rain[i]
 				else :								break
 			return i
 		pre_sowing_kc = [0]*compute_sowing_index()
@@ -286,6 +291,7 @@ class KharifModelCalculator:
 			crop.end_date_index = len(kc) - 1
 			kc = kc + [0]*(365-len(kc))
 			self.rain = self.rain + [0]*(365-len(self.rain))
+			kc = kc[0:365]
 			crop.PET = np.array(et0[0:len(kc)]) * np.array(kc)
 	
 	def generate_output_points_grid(self):
@@ -380,8 +386,10 @@ class KharifModelCalculator:
 	def calculate(self,
 					rain,
 					crop_names,
+					sowing_threshold,
 					start_date_index=START_DATE_INDEX,
 					end_date_index=END_DATE_INDEX,
+					monsoon_end_date_index = MONSOON_END_DATE_INDEX
 				):
 		
 		start_time = time.time()
@@ -390,16 +398,16 @@ class KharifModelCalculator:
 		self.crops = [Crop(crop_name)	for crop_name in crop_names]
 		self.LULC_pseudo_crops = {crop_name: Crop(crop_name)	for crop_name in dict_LULC_pseudo_crop}
 		
-		self.set_PET_and_end_date_index_of_crops(self.et0)
+		self.set_PET_and_end_date_index_of_crops(self.et0, sowing_threshold)
 		for crop in self.crops:
-			crop.PET_sum_monsoon = sum(crop.PET[start_date_index:end_date_index+1])
+			crop.PET_sum_monsoon = sum(crop.PET[start_date_index:monsoon_end_date_index+1])
 			crop.PET_sum_cropend = sum(crop.PET[start_date_index:crop.end_date_index+1])
 		for crop_name in self.LULC_pseudo_crops:
 			crop = self.LULC_pseudo_crops[crop_name]
-			crop.PET_sum_monsoon = sum(crop.PET[start_date_index:end_date_index+1])
+			crop.PET_sum_monsoon = sum(crop.PET[start_date_index:monsoon_end_date_index+1])
 			crop.PET_sum_cropend = sum(crop.PET[start_date_index:crop.end_date_index+1])
 		
-		rain_sum = sum(self.rain[start_date_index:end_date_index+1])
+		rain_sum = sum(self.rain[start_date_index:monsoon_end_date_index+1])
 		#~ end_date_index = max(end_date_index, max([crop.end_date_index	for crop in self.crops]))
 		
 		self.output_grid_points = self.generate_output_points_grid()
@@ -418,9 +426,9 @@ class KharifModelCalculator:
 			count += 1
 			if count % 100 == 0:	print count
 			if point.lulc_type in ['agriculture', 'fallow land']:
-				point.run_model(self.rain, self.crops, start_date_index, end_date_index)
+				point.run_model(self.rain, self.crops, start_date_index, end_date_index, monsoon_end_date_index)
 			else:
-				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index)
+				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index, monsoon_end_date_index)
 		
 		self.filter_out_cadastral_plots_outside_boundary()
 		self.output_cadastral_points = self.generate_output_points_for_cadastral_plots()
@@ -434,9 +442,9 @@ class KharifModelCalculator:
 			count += 1
 			if count % 10 == 0:	print count
 			if point.lulc_type in ['agriculture', 'fallow land']:
-				point.run_model(self.rain, self.crops, start_date_index, end_date_index)
+				point.run_model(self.rain, self.crops, start_date_index, end_date_index, monsoon_end_date_index)
 			else:
-				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index)
+				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index, monsoon_end_date_index)
 		print 'done'
 		return
 		
