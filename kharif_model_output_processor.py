@@ -103,8 +103,6 @@ class KharifModelOutputProcessor:
 			self.zone_area_village[zone_name] ={}
 			self.zone_area_village[zone_name]['area'] = zones_layer.feature_dict[zone_id].geometry().area()/10000
 			self.zone_area_village[zone_name]['code'] = zones_layer.feature_dict[zone_id]['UNICODE']
-			print(zone_name)
-			print("---")
 
 
 

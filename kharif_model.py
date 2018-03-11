@@ -308,7 +308,7 @@ class KharifModel:
 			self.input_layers['cadastral_layer'] = self.iface.addVectorLayer(self.dlg.cadastral_layer_filename.text(), 'Cadastral Map', 'ogr')
 			self.input_layers['slope_layer'] = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
 			if self.dlg.drainage_layer_filename.text() != '':
-				self.input_layers['drainage_layer'] = self.iface.addRasterLayer(self.dlg.drainage_layer_filename.text(), 'Drainage', 'ogr')
+				self.drainage_layer = self.iface.addVectorLayer(self.dlg.drainage_layer_filename.text(), 'Drainage', 'ogr')
 			self.rain = [int(row["Rainfall"]) for row in csv.DictReader(open(str(self.dlg.rainfall_csv_filename.text())))]
 			et0_file_data = [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
 			self.et0 = set_et0_from_et0_file_data(et0_file_data)
