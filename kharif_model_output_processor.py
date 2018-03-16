@@ -156,44 +156,44 @@ class KharifModelOutputProcessor:
 
 		rows.append(['Rainfall (mm)']
 			+ [rain_sum	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
-			+ [rain_sum	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [rain_sum for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		
 		rows.append(['PET Monsoon End']
-			+ [crop.PET_sum_monsoon	for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for crop in crops]
-			+ [pseudo_crop.PET_sum_monsoon	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [crop.PET_sum_monsoon.item() for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for crop in crops]
+			+ [pseudo_crop.PET_sum_monsoon.item() for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['AET Monsoon End']
-			+ [zonewise_budgets[ID]['agricultural'].AET_monsoon_end[i] for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for i in range(len(crops))]
-			+ [zonewise_budgets[ID][pseudo_crop.name].AET_monsoon_end[0] for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [zonewise_budgets[ID]['agricultural'].AET_monsoon_end[i].item() for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].AET_monsoon_end[0].item() for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['Monsoon Deficit(PET-AET)']
-			+ [zonewise_budgets[ID]['agricultural'].PET_minus_AET_monsoon_end[i]	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
-			+ [zonewise_budgets[ID][pseudo_crop.name].PET_minus_AET_monsoon_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [zonewise_budgets[ID]['agricultural'].PET_minus_AET_monsoon_end[i].item()	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].PET_minus_AET_monsoon_end[0].item() for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		rows.append(['GW Recharge in Monsoon']
-			+ [zonewise_budgets[ID]['agricultural'].GW_rech_monsoon_end[i] for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
-			+ [zonewise_budgets[ID][pseudo_crop.name].GW_rech_monsoon_end[0] for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [zonewise_budgets[ID]['agricultural'].GW_rech_monsoon_end[i].item() for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].GW_rech_monsoon_end[0].item() for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		rows.append(['Runoff in Monsoon (mm)']
-			+ [zonewise_budgets[ID]['agricultural'].runoff_monsoon_end[i] for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
-			+ [zonewise_budgets[ID][pseudo_crop.name].runoff_monsoon_end[0] for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [zonewise_budgets[ID]['agricultural'].runoff_monsoon_end[i].item() for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].runoff_monsoon_end[0].item() for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		
 		rows.append(['Soil Moisture Monsoon end']
-			+ [zonewise_budgets[ID]['agricultural'].sm_monsoon_end[i]	for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
-			+ [zonewise_budgets[ID][pseudo_crop.name].sm_monsoon_end[0]	for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [zonewise_budgets[ID]['agricultural'].sm_monsoon_end[i].item()	for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].sm_monsoon_end[0].item()	for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['Post Monsoon PET']
-			+ [crop.PET_sum_cropend	- crop.PET_sum_monsoon for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
-			+ [pseudo_crop.PET_sum_cropend - pseudo_crop.PET_sum_monsoon	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [crop.PET_sum_cropend.item() - crop.PET_sum_monsoon.item() for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [pseudo_crop.PET_sum_cropend.item() - pseudo_crop.PET_sum_monsoon.item()	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		rows.append(['Infilitration in Monsoon (mm)']
-			+ [zonewise_budgets[ID]['agricultural'].infil_monsoon_end[i]	for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
-			+ [zonewise_budgets[ID][pseudo_crop.name].infil_monsoon_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [zonewise_budgets[ID]['agricultural'].infil_monsoon_end[i].item() for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [zonewise_budgets[ID][pseudo_crop.name].infil_monsoon_end[0].item() for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 
@@ -378,7 +378,6 @@ class KharifModelOutputProcessor:
 			else:
 				del cadastral_points_per_plot[k]
 
-		# print cadastral_points_per_plot
 		#	Create duplicate cadastral layer in memory
 		memory_cadastral_layer = QgsVectorLayer('Polygon?crs=epsg:32643', crop_name + ' Cadastral Level Vulnerability', 'memory')
 		memory_cadastral_layer.startEditing()
@@ -393,11 +392,10 @@ class KharifModelOutputProcessor:
 		memory_cadastral_layer.dataProvider().addAttributes([QgsField('Deficit', QVariant.Double)])
 		memory_cadastral_layer.updateFields()
 		for new_feature in memory_cadastral_layer.getFeatures():
-			new_feature['Deficit'] = cadastral_points_per_plot[
-				dict_new_feature_id_to_old_feature_id[new_feature.id()]]
+			new_feature['Deficit'] = cadastral_points_per_plot[dict_new_feature_id_to_old_feature_id[new_feature.id()]].item()
+			# print cadastral_points_per_plot[dict_new_feature_id_to_old_feature_id[new_feature.id()]]
 			memory_cadastral_layer.updateFeature(new_feature)
 		memory_cadastral_layer.commitChanges()
-
 		#	Graduated Rendering
 		graduated_symbol_renderer_range_list = []
 		ET_D_max = max(cadastral_points_per_plot.values())
@@ -430,7 +428,7 @@ class KharifModelOutputProcessor:
 
 		memory_cadastral_layer.dataProvider().forceReload()
 		memory_cadastral_layer.triggerRepaint()
-
+		
 		QgsVectorFileWriter.writeAsVectorFormat(memory_cadastral_layer,
 												base_path + '/kharif_'+crop_name+'_cadastral_level_vulnerability.shp', "utf-8", None,
 												"ESRI Shapefile")

@@ -49,10 +49,15 @@ class Budget:
 		self.PET_minus_AET_monsoon_end = np.array([crops[i].PET_sum_monsoon - self.AET_monsoon_end[i]	for i in range(len(crops))])
 		self.PET_minus_AET_post_monsoon = np.array([(crops[i].PET_sum_cropend - self.AET_crop_end[i])-self.PET_minus_AET_monsoon_end[i]	for i in range(len(crops))])
 		self.PET_minus_AET_crop_end = np.array([crops[i].PET_sum_cropend - self.AET_crop_end[i]		for i in range(len(crops))])
-		
-
-
-	
+		# print monsoon_end_date_index, end_date_index
+		# print self.GW_rech_monsoon_end
+		# gwl=[float(k[0]) for k in self.GW_rech.tolist()]
+		# ro =[float(k[0]) for k in self.runoff.tolist()]
+		# ssm = [float(k[0]) for k in self.sm.tolist()]
+		# infi = [float(k[0]) for k in self.infil.tolist()]
+		# a = [float(k[0]) for k in self.AET.tolist()]
+		# for j in range (0,30):
+		# 	print (ssm[j],ro[j],infi[j],a[j],gwl[j])
 
 class Crop:
 	def __init__(self, name):
@@ -205,11 +210,12 @@ class Point:
 		#~ print np.logical_or(self.SM1_before < self.FC, self.layer2_moisture < self.Sat)
 		#~ print np.minimum((self.Sat - self.layer2_moisture) * self.SM2 * 1000,
 										 #~ (self.SM1_before - self.FC) * self.SM1 * 1000 * self.daily_perc_factor)
-		self.R_to_second_layer = np.where(
-									np.logical_or(self.SM1_before < self.FC, self.layer2_moisture < self.Sat), 0,
+		self.R_to_second_layer = np.where(self.SM1_before < self.FC, 0,
+									np.where(self.layer2_moisture < self.Sat,
 									np.minimum((self.Sat - self.layer2_moisture) * self.SM2 * 1000,
-										 (self.SM1_before - self.FC) * self.SM1 * 1000 * self.daily_perc_factor)
-									 )
+										 (self.SM1_before - self.FC) * self.SM1 * 1000 * self.daily_perc_factor),
+										0
+									 ))
 		self.SM2_before = (self.layer2_moisture*self.SM2*1000 + self.R_to_second_layer)/self.SM2/1000
 	
 	def secondary_runoff(self, day):
@@ -304,6 +310,9 @@ class KharifModelCalculator:
 			while i<=end :
 				yield i
 				i = i+step
+				 
+		#x_List = [749019.848090772]
+		#y_List = [2262579.4183734786]
 		x_List = [x for x in frange(xminB,xmaxB,STEP)]
 		y_List = [x for x in frange(yminB,ymaxB,STEP)]
 		print len(x_List), len (y_List)
@@ -431,7 +440,7 @@ class KharifModelCalculator:
 		
 		self.filter_out_cadastral_plots_outside_boundary()
 		self.output_cadastral_points = self.generate_output_points_for_cadastral_plots()
-		self.set_container_polygon_of_points_for_layers(self.output_cadastral_points, [self.soil_layer, self.lulc_layer])
+		self.set_container_polygon_of_points_for_layers(self.output_cadastral_points, [self.soil_layer, self.lulc_layer, self.cadastral_layer])
 		self.set_slope_at_points(self.output_cadastral_points)
 		self.output_cadastral_points = self.filter_out_points_with_incomplete_data(self.output_cadastral_points)
 		self.output_cadastral_points = filter(lambda p:	p.lulc_type not in ['water','habitation'], self.output_cadastral_points)
@@ -439,7 +448,7 @@ class KharifModelCalculator:
 		count = 0
 		for point in self.output_cadastral_points:
 			count += 1
-			if count % 10 == 0:	print count
+			if count % 20 == 0:	print count
 			if point.lulc_type in ['agriculture', 'fallow land']:
 				point.run_model(self.rain, self.crops, start_date_index, end_date_index, monsoon_end_date_index)
 			else:
