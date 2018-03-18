@@ -49,15 +49,18 @@ class Budget:
 		self.PET_minus_AET_monsoon_end = np.array([crops[i].PET_sum_monsoon - self.AET_monsoon_end[i]	for i in range(len(crops))])
 		self.PET_minus_AET_post_monsoon = np.array([(crops[i].PET_sum_cropend - self.AET_crop_end[i])-self.PET_minus_AET_monsoon_end[i]	for i in range(len(crops))])
 		self.PET_minus_AET_crop_end = np.array([crops[i].PET_sum_cropend - self.AET_crop_end[i]		for i in range(len(crops))])
-		# print monsoon_end_date_index, end_date_index
 		# print self.GW_rech_monsoon_end
 		# gwl=[float(k[0]) for k in self.GW_rech.tolist()]
 		# ro =[float(k[0]) for k in self.runoff.tolist()]
 		# ssm = [float(k[0]) for k in self.sm.tolist()]
 		# infi = [float(k[0]) for k in self.infil.tolist()]
 		# a = [float(k[0]) for k in self.AET.tolist()]
-		# for j in range (0,30):
+		# for j in range (0,150):
 		# 	print (ssm[j],ro[j],infi[j],a[j],gwl[j])
+		# print ssm
+		# print monsoon_end_date_index, end_date_index
+		# print self.sm_crop_end, self.sm_monsoon_end
+
 
 class Crop:
 	def __init__(self, name):
@@ -134,6 +137,8 @@ class Point:
 			self.percolation_to_GW(day)
 
 		self.budget.summarize(crops, start_date_index, end_date_index, monsoon_end_date_index)
+		self.budget.sm_crop_end -= self.WP_depth	# requirement expressed by users
+		self.budget.sm_monsoon_end -= self.WP_depth	# requirement expressed by users
 	
 	def setup_for_daily_computations(self, crops):
 		"""
@@ -298,7 +303,7 @@ class KharifModelCalculator:
 			self.rain = self.rain + [0]*(365-len(self.rain))
 			kc = kc[0:365]
 			crop.PET = np.array(et0[0:len(kc)]) * np.array(kc)
-	
+		
 	def generate_output_points_grid(self):
 		xminB =  self.zones_layer.qgsLayer.extent().xMinimum()
 		xmaxB = self.zones_layer.qgsLayer.extent().xMaximum()
@@ -311,8 +316,8 @@ class KharifModelCalculator:
 				yield i
 				i = i+step
 				 
-		#x_List = [749019.848090772]
-		#y_List = [2262579.4183734786]
+		# x_List = [749019.848090772]
+		# y_List = [2262579.4183734786]
 		x_List = [x for x in frange(xminB,xmaxB,STEP)]
 		y_List = [x for x in frange(yminB,ymaxB,STEP)]
 		print len(x_List), len (y_List)

@@ -3,7 +3,7 @@ PLUGIN_MODE = 'REAL'	#	Possible values: 'DEBUG', 'TEST-SUITE', 'REAL'
 #	Set the following for debugging or testing mode
 DEBUG_BASE_FOLDER_PATH = 'D:\MTP related\Datasets\washim'
 TEST_SUITE_BASE_FOLDER_PATH = 'NO PATH YET'
-DEBUG_OR_TEST_CROPS = ['soyabean']	#	Possible values: subset of dict_crop.keys()
+DEBUG_OR_TEST_CROPS = ['bajra']	#	Possible values: subset of dict_crop.keys()
 DEBUG_OR_TEST_GRADUATED_RENDERING_INTERVAL_POINTS = [0, 50]
 
 #	Input-Output protocol constants
