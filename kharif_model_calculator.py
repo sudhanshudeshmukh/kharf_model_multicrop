@@ -35,7 +35,7 @@ class Budget:
 		self.GW_rech = np.array(self.GW_rech)
 		self.sm = np.array(self.sm)
 		self.sm_crop_end = np.array([self.sm[crops[i].end_date_index][i]	for i in range(len(crops))])
- 		self.sm_monsoon_end = np.array([self.sm[monsoon_end_date_index][i]	for i in range(len(crops))])
+ 		self.sm_monsoon_end = np.array([self.sm[monsoon_end_date_index+1][i]	for i in range(len(crops))])
 		self.runoff_crop_end = [np.sum(self.runoff[start_date_index:crops[i].end_date_index+1,i])	for i in range(len(crops))]
 		self.runoff_monsoon_end = [np.sum(self.runoff[start_date_index:monsoon_end_date_index+1,i])	for i in range(len(crops))]
 		self.runoff_total = [np.sum(self.runoff[start_date_index:end_date_index+1,i])	for i in range(len(crops))]
