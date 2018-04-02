@@ -16,7 +16,7 @@ import numpy as np
 from collections import OrderedDict
 from configuration import *
 from constants_dicts_lookups import *
-
+from copy import deepcopy
 
 BOUNDARY_LABEL = 'Zones'
 SOIL_LABEL = 'Soil'
@@ -67,11 +67,11 @@ class Crop:
 		self.name = name
 		self.PET = [];	self.end_date_index = self.PET_sum_monsoon = self.PET_sum_cropend = None
 	@property
-	def root_depth(self):	return dict_crop[self.name][2] if self.name in dict_crop.keys() else dict_LULC_pseudo_crop[self.name][2]
+	def root_depth(self):	return dict_crop[self.name][2] if self.name in dict_crop.keys() else dict_crop_current_fallow[self.name][2] if self.name in dict_crop_current_fallow.keys() else dict_LULC_pseudo_crop[self.name][2]
 	@property
-	def KC(self):	return dict_crop[self.name][0] if self.name in dict_crop.keys() else dict_LULC_pseudo_crop[self.name][0]
+	def KC(self):	return dict_crop[self.name][0] if self.name in dict_crop.keys() else dict_crop_current_fallow[self.name][0] if self.name in dict_crop_current_fallow.keys()  else dict_LULC_pseudo_crop[self.name][0]
 	@property
-	def depletion_factor(self):	return dict_crop[self.name][1] if self.name in dict_crop.keys() else dict_LULC_pseudo_crop[self.name][1]
+	def depletion_factor(self):	return dict_crop[self.name][1] if self.name in dict_crop.keys() else dict_crop_current_fallow[self.name][1] if self.name in dict_crop_current_fallow.keys() else dict_LULC_pseudo_crop[self.name][1]
 
 
 class Point:
@@ -111,8 +111,6 @@ class Point:
 	def lulc_type(self):	return dict_lulc[self.lulc_polygon[Desc].lower()]
 	@property
 	def HSG(self):	return dict_SoilProperties[self.texture][0]
-	@property
-	def cn_val(self):	return dict_RO[self.lulc_type][self.HSG]
 	
 	@zone_polygon.setter
 	def zone_polygon(self, polygon):	self.container_polygons[BOUNDARY_LABEL] = polygon
@@ -122,10 +120,19 @@ class Point:
 	def lulc_polygon(self, polygon):	self.container_polygons[LULC_LABEL] = polygon
 	@cadastral_polygon.setter
 	def cadastral_polygon(self, polygon):	self.container_polygons[CADASTRAL_LABEL] = polygon
-	
-	def run_model(self, rain, crops, start_date_index, end_date_index, monsoon_end_date_index):
 		
-		self.setup_for_daily_computations(crops)
+	
+	def copyPoint(self):
+		x = Point(self.qgsPoint)
+		x.zone_polygon = self.zone_polygon
+		x.soil_polygon = self.soil_polygon
+		x.lulc_polygon = self.lulc_polygon
+		x.cadastral_polygon = self.cadastral_polygon
+		return x
+
+	
+	def run_model(self, rain, crops, start_date_index, end_date_index, monsoon_end_date_index,lulc):
+		self.setup_for_daily_computations(crops,lulc)
 		
 		self.SM1_fraction = self.layer2_moisture = self.WP
 		
@@ -140,9 +147,10 @@ class Point:
 		self.budget.sm_crop_end -= self.WP_depth	# requirement expressed by users
 		self.budget.sm_monsoon_end -= self.WP_depth	# requirement expressed by users
 	
-	def setup_for_daily_computations(self, crops):
+	def setup_for_daily_computations(self, crops,lulc):
 		"""
 		"""
+		self.lulc_type = lulc
 		Sat_depth = self.Sat * self.depth_value * 1000
 		self.WP_depth = self.WP * self.depth_value * 1000
 		FC_depth = self.FC * self.depth_value * 1000
@@ -150,6 +158,8 @@ class Point:
 		root_depths = np.array([crop.root_depth	for crop in crops])
 		self.SM1 = np.where(self.depth_value <= root_depths, self.depth_value - 0.01, root_depths)
 		self.SM2 = np.where(self.depth_value <= root_depths, 0.01, self.depth_value - root_depths)
+
+		self.cn_val = dict_RO[lulc][self.HSG]
 		
 		cn_s = cn_val = self.cn_val
 		cn3 = cn_s *np.exp(0.00673*(100-cn_s))
@@ -275,6 +285,7 @@ class KharifModelCalculator:
 		
 		zone_polygon_ids = self.zones_layer.feature_dict.keys()
 		self.zone_points_dict = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
+		self.zone_points_dict_current_fallow = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
 		cadastral_polygon_ids = self.cadastral_layer.feature_dict.keys()
 		
 		self.slope_layer = slope_layer
@@ -296,9 +307,12 @@ class KharifModelCalculator:
 			return i
 		pre_sowing_kc = [0]*compute_sowing_index()
 		PETs = {}
-		for crop in self.crops + self.LULC_pseudo_crops.values():
+		for crop in self.crops + self.LULC_pseudo_crops.values() + self.currnet_fallow:
 			kc = (pre_sowing_kc if crop in self.crops else []) + crop.KC
-			crop.end_date_index = len(kc) - 1
+			if (len(kc) - 1 < 364):
+				crop.end_date_index = len(kc) - 1
+			else:
+				crop.end_date_index = 364
 			kc = kc + [0]*(365-len(kc))
 			self.rain = self.rain + [0]*(365-len(self.rain))
 			kc = kc[0:365]
@@ -318,6 +332,8 @@ class KharifModelCalculator:
 				 
 		# x_List = [749019.848090772]
 		# y_List = [2262579.4183734786]
+		# x_List = [743508]
+		# y_List = [2262526]
 		x_List = [x for x in frange(xminB,xmaxB,STEP)]
 		y_List = [x for x in frange(yminB,ymaxB,STEP)]
 		print len(x_List), len (y_List)
@@ -329,11 +345,15 @@ class KharifModelCalculator:
 		for point in self.output_grid_points:
 			polygon = self.zones_layer.get_polygon_containing_point(point)
 			if polygon is not None:
-				point.zone_polygon = polygon
+				point.container_polygons[BOUNDARY_LABEL] = polygon
 				self.zone_points_dict[polygon.id()].append(point)
 				filtered_points.append(point)
 		self.output_grid_points = filtered_points
 	
+	def filter_point_zonewise(self):
+		for point in self.output_grid_points_current_fallow:
+			self.zone_points_dict_current_fallow[point.zone_polygon.id()].append(point)
+
 	def filter_out_cadastral_plots_outside_boundary(self):
 		#~ QgsGeometryAnalyzer().dissolve(self.zones_layer.qgsLayer, 'temp.shp')
 		#~ dissolved_zones_layer = QgsVectorLayer('temp.shp', 'dissolved boundary', 'ogr')
@@ -410,7 +430,8 @@ class KharifModelCalculator:
 		self.rain = rain
 		self.crops = [Crop(crop_name)	for crop_name in crop_names]
 		self.LULC_pseudo_crops = {crop_name: Crop(crop_name)	for crop_name in dict_LULC_pseudo_crop}
-		
+		self.currnet_fallow = [Crop('current fallow crop')]
+
 		self.set_PET_and_end_date_index_of_crops(self.et0, sowing_threshold)
 		for crop in self.crops:
 			crop.PET_sum_monsoon = sum(crop.PET[start_date_index:monsoon_end_date_index+1])
@@ -419,6 +440,10 @@ class KharifModelCalculator:
 			crop = self.LULC_pseudo_crops[crop_name]
 			crop.PET_sum_monsoon = sum(crop.PET[start_date_index:monsoon_end_date_index+1])
 			crop.PET_sum_cropend = sum(crop.PET[start_date_index:crop.end_date_index+1])
+		for crop in self.currnet_fallow:
+			crop.PET_sum_monsoon = sum(crop.PET[start_date_index:monsoon_end_date_index+1])
+			crop.PET_sum_cropend = sum(crop.PET[start_date_index:crop.end_date_index+1])
+
 		
 		rain_sum = sum(self.rain[start_date_index:monsoon_end_date_index+1])
 		#~ end_date_index = max(end_date_index, max([crop.end_date_index	for crop in self.crops]))
@@ -434,15 +459,29 @@ class KharifModelCalculator:
 		print 'Number of grid points to process : ', len(self.output_grid_points)
 		for zone_id in self.zone_points_dict:
 			self.zone_points_dict[zone_id] = filter(lambda p:	p.lulc_type not in ['water','habitation'], self.zone_points_dict[zone_id])
-		count = 0
+		self.output_grid_points_current_fallow = [Point.copyPoint(point) for point in self.output_grid_points if point.lulc_type in ['agriculture', 'fallow land']]
+		self.filter_point_zonewise()
+		count = 0 
 		for point in self.output_grid_points:
 			count += 1
 			if count % 100 == 0:	print count
 			if point.lulc_type in ['agriculture', 'fallow land']:
-				point.run_model(self.rain, self.crops, start_date_index, end_date_index, monsoon_end_date_index)
+				point.run_model(self.rain, self.crops, start_date_index, end_date_index, monsoon_end_date_index, dict_lulc[point.container_polygons[LULC_LABEL][Desc].lower()])
 			else:
-				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index, monsoon_end_date_index)
-		
+				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index, monsoon_end_date_index, dict_lulc[point.container_polygons[LULC_LABEL][Desc].lower()] ) 
+		for point in self.output_grid_points_current_fallow:
+			count += 1
+			if count % 100 == 0:	print count
+			point.run_model(self.rain, self.currnet_fallow, start_date_index, end_date_index, monsoon_end_date_index,'current fallow')
+		self.non_ag_points = {zone_id: filter(lambda p: p.lulc_type in dict_LULC_pseudo_crop, self.zone_points_dict[zone_id] ) for zone_id in self.zone_points_dict}
+		self.non_ag_points_type = {zone_id : {lulc: filter(lambda p : p.lulc_type == lulc, self.non_ag_points[zone_id]) for lulc in dict_LULC_pseudo_crop} for zone_id in self.non_ag_points}
+		self.zone_points_dict_diff_LU = {zone_id : {lulc:map(Point.copyPoint,self.non_ag_points[zone_id]) if (len(self.non_ag_points_type[zone_id][lulc]) == 0) else [] for lulc in self.non_ag_points_type[zone_id]} for zone_id in self.non_ag_points_type}
+		for zone_id in self.zone_points_dict_diff_LU:
+			for lulc in self.zone_points_dict_diff_LU[zone_id]:
+				for point in self.zone_points_dict_diff_LU[zone_id][lulc]:
+					point.run_model(self.rain, [self.LULC_pseudo_crops[lulc]], start_date_index, end_date_index, monsoon_end_date_index,lulc)
+	
+
 		self.filter_out_cadastral_plots_outside_boundary()
 		self.output_cadastral_points = self.generate_output_points_for_cadastral_plots()
 		self.set_container_polygon_of_points_for_layers(self.output_cadastral_points, [self.soil_layer, self.lulc_layer, self.cadastral_layer])
@@ -455,9 +494,9 @@ class KharifModelCalculator:
 			count += 1
 			if count % 20 == 0:	print count
 			if point.lulc_type in ['agriculture', 'fallow land']:
-				point.run_model(self.rain, self.crops, start_date_index, end_date_index, monsoon_end_date_index)
+				point.run_model(self.rain, self.crops, start_date_index, end_date_index, monsoon_end_date_index, dict_lulc[point.container_polygons[LULC_LABEL][Desc].lower()])
 			else:
-				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index, monsoon_end_date_index)
+				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index, monsoon_end_date_index,dict_lulc[point.container_polygons[LULC_LABEL][Desc].lower()])
 		print 'done'
 		return
 		

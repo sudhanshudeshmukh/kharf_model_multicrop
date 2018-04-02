@@ -212,12 +212,15 @@ class KharifModel:
 				crops=[crop.name for crop in self.modelCalculator.crops]
 			)
 			zonewise_budgets = op.compute_zonewise_budget	(
-				self.modelCalculator.zone_points_dict , 
+				self.modelCalculator.zone_points_dict ,
+				self.modelCalculator.zone_points_dict_current_fallow, 
+				self.modelCalculator.zone_points_dict_diff_LU,
 				self.modelCalculator.zones_layer 
 			)
 			op.output_zonewise_budget_to_csv	(
 				zonewise_budgets,
 				self.modelCalculator.crops,
+				self.modelCalculator.currnet_fallow,
 				self.modelCalculator.LULC_pseudo_crops.values(),
 				os.path.join(self.base_path, ZONEWISE_BUDGET_CSV_FILENAME),
 				sum(self.rain[START_DATE_INDEX : self.monsoon_end_date_index+1])

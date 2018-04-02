@@ -13,16 +13,16 @@ Depth = 'DEPTH'
 
 #Dictionary for generic land use types:
 dict_lulc = {
-	'forest-forest blank':'scrub forest',
-	'forest-deciduous (dry/moist/thorn)-open': 'deciduous open',
+	'forest-forest blank':'scrub',
+	'forest-deciduous (dry/moist/thorn)-open': 'scrub',
 	'agricultural land-crop land-rabi crop': 'agriculture',
-	'forest-scrub forest': 'scrub forest',	
+	'forest-scrub forest': 'scrub',	
 	'agricultural land-crop land-kharif crop': 'agriculture',
 	'agricultural land-fallow-current fallow': 'fallow land',
-	'wastelands-scrub land-open scrub': 'scrub open',
-	'wastelands-gullied/ravinous land-gullied': 'scrub open',
-	'forest-deciduous (dry/moist/thorn)-dense/closed': 'deciduous - dense',
-	'wastelands-scrub land-dense scrub': 'scrub dense',
+	'wastelands-scrub land-open scrub': 'wasteland',
+	'wastelands-gullied/ravinous land-gullied': 'wasteland',
+	'forest-deciduous (dry/moist/thorn)-dense/closed': 'forest',
+	'wastelands-scrub land-dense scrub': 'scrub',
 	'built up-built up (rural)-built up area (rural)': 'habitation',
 	'waterbodies-reservoir/tanks-dry-zaid extent': 'water',
 	'waterbodies-reservoir/tanks-dry-rabi extent': 'water',
@@ -31,7 +31,7 @@ dict_lulc = {
 	'waterbodies-reservoir/tanks-dry-kharif extent': 'water',
 	'agricultural land-crop land-two crop area': 'agriculture',
 	'built up-built up (urban)-vegetated area': 'habitation',
-	'wastelands-barren rocky/stony waste': 'scrub dense',
+	'wastelands-barren rocky/stony waste': 'scrub',
 	'agricultural land-plantation-agriculture plantation': 'agriculture',
 	'agricultural land-crop land-more than two crop': 'agriculture',
 	'waterbodies-river/stream-perennial': 'water',
@@ -44,28 +44,29 @@ dict_lulc = {
 	'zaid':'agriculture',
 	'kharif':'agriculture',
 	'agricultural plantation':'agriculture',
-	'deciduousdry/ moist/ thorn - dense/ closed':'deciduous - dense',
-	'evergreen/ semi evergreen - dense/ closed':'deciduous - dense',
-	'forest plantation':'deciduous - dense',
-	'tree clad area - dense/ closed':'deciduous - dense',
+	'deciduousdry/ moist/ thorn - dense/ closed':'forest',
+	'evergreen/ semi evergreen - dense/ closed':'forest',
+	'forest plantation':'forest',
+	'tree clad area - dense/ closed':'forest',
 	'fallow land':'fallow land',
 	'built up - compactcontinuous':'habitation',
+	'built up - compact (continuous)': 'habitation',
 	'built up - sparsediscontinuous':'habitation',
 	'industrial area':'habitation',
 	'rural':'habitation',
-	'tree clad area - open':'scrub forest',
-	'deciduousdry/ moist/ thorn - open':'scrub forest',
-	'evergreen/ semi evergreen - open':'scrub forest',
-	'scrub forest':'scrub forest',
-	'ash/ cooling pond/ effluent and other waste':'scrub open',
-	'mining - abandoned':'scrub open',
-	'mining - active':'scrub open',
-	'quarry':'scrub open',
-	'barren rocky':'scrub open',
-	'gullied/ ravinous land - gullied':'scrub open',
-	'scrub land - dense/ closed':'scrub open',
-	'scrub land - open':'scrub open',
-	'vegetated/ open area':'scrub open',
+	'tree clad area - open':'scrub',
+	'deciduousdry/ moist/ thorn - open':'scrub',
+	'evergreen/ semi evergreen - open':'scrub',
+	'scrub':'scrub',
+	'ash/ cooling pond/ effluent and other waste':'wasteland',
+	'mining - abandoned':'wasteland',
+	'mining - active':'wasteland',
+	'quarry':'wasteland',
+	'barren rocky':'wasteland',
+	'gullied/ ravinous land - gullied':'wasteland',
+	'scrub land - dense/ closed':'wasteland',
+	'scrub land - open':'wasteland',
+	'vegetated/ open area':'wasteland',
 	'reservoir/ tanks - permanent':'water',
 	'reservoir/ tanks - seasonal':'water',
 	'river - non perennial':'water',
@@ -73,8 +74,8 @@ dict_lulc = {
 	'canal/ drain':'water',
 	'lakes/ ponds - permanent':'water',
 	'lakes/ ponds - seasonal':'water',
-	'deciduous (dry/ moist/ thorn) - open': 'deciduous open',
-	'deciduous (dry/ moist/ thorn) - dense/ closed' :  'deciduous - dense',
+	'deciduous (dry/ moist/ thorn) - open': 'scrub',
+	'deciduous (dry/ moist/ thorn) - dense/ closed' :  'forest',
 	'built up - sparse (discontinuous)' : 'habitation'	
 }
 
@@ -117,14 +118,13 @@ dict_SoilProperties = {
 #Lookup for SCS curve no based on land ussage and HSG: 
 dict_RO = {
 	'agriculture': {'A': 67, 'B': 78, 'C': 85, 'D': 89},
-	'deciduous - dense': {'A': 30, 'B': 55, 'C': 70, 'D': 77},
-	'deciduous open': {'A': 36, 'B': 60, 'C': 73, 'D': 79},
+	'forest': {'A': 30, 'B': 55, 'C': 70, 'D': 77},
 	'fallow land': {'A': 77, 'B': 86, 'C': 91, 'D': 94},
 	'habitation': {'A': 77, 'B': 85, 'C': 90, 'D': 92},
-	'scrub dense': {'A': 49, 'B': 69, 'C': 79, 'D': 84},
-	'scrub forest': {'A': 57, 'B': 73, 'C': 82, 'D': 86},
-	'scrub open': {'A': 68, 'B': 79, 'C': 86, 'D': 89},
-	'water': {'A': 100, 'B': 100, 'C': 100, 'D': 100}
+	'scrub': {'A': 49, 'B': 69, 'C': 79, 'D': 84},
+	'wasteland': {'A': 68, 'B': 79, 'C': 86, 'D': 89},
+	'water': {'A': 100, 'B': 100, 'C': 100, 'D': 100},
+	'current fallow': {'A': 72, 'B': 81, 'C': 88, 'D': 91}
 }
 
 #Lookup for Soil depth with respect to given soil depth in Soil map: 
@@ -155,14 +155,17 @@ dict_crop = {
 	'maize':		(	[0.55]*20 + [1]*35 + [1.23]*40 + [0.67]*30,		0.55,	1.35	)
 }
 
+dict_crop_current_fallow = {
+	'current fallow crop':		(	[0.2]*60 + [0.3]*62 ,		0.5,	0.9		)
+}
+
+
 #Lookup for properties of vegetation on various LULC types : KC, depletion factor, root depth
-#	'deciduous open', 'scrub dense' and 'scrub forest' have been pooled together as 'Scrub Forest'
+#	'scrub', 'scrub' and 'scrub' have been pooled together as 'scrub'
 dict_LULC_pseudo_crop =	{
-	'deciduous - dense':	(	[0.3]*45 + [1.15]*60 + [0.7]*90 + [0.1]*170,	0.8,	3	),
-	'deciduous open':		(	[0.3]*30 + [0.7]*60 + [0.5]*60 + [0.2]*215,		0.6,	1.5	),
-	'scrub dense':			(	[0.3]*30 + [0.7]*60 + [0.5]*60 + [0.2]*215,		0.6,	1.5	),
-	'scrub open':			(	[0.5]*120 + [0.25]*60 + [0.15]*120 + [0.1]*65,	0.5,	0.5	),
-	'scrub forest':			(	[0.3]*30 + [0.7]*60 + [0.5]*60 + [0.2]*215,		0.6,	1.5	)
+	'forest':	(	[0.3]*45 + [1.15]*60 + [0.7]*90 + [0.1]*170,	0.8,	3	),
+	'wasteland':			(	[0.5]*120 + [0.25]*60 + [0.15]*120 + [0.1]*65,	0.5,	0.5	),
+	'scrub':			(	[0.3]*30 + [0.7]*60 + [0.5]*60 + [0.2]*215,		0.6,	1.5	)
 }
 
 
