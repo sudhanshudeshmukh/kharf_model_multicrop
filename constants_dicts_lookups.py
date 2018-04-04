@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 ########	Constants Start	########
 
 NEW_LU= 'LU_Type'
@@ -169,6 +171,25 @@ dict_LULC_pseudo_crop =	{
 }
 
 
+
+dict_crop_marathi_season ={
+	'soyabean': {'Marathi' : 'सोयाबीन', 'Season':'Kharif_Main'},
+	'bajra': {'Marathi' : 'बाजरा', 'Season':'Kharif_Main'},
+	'moong': {'Marathi' : 'मुग', 'Season':'Kharif_Main'},
+	'sorghum' : {'Marathi' : 'खरीप ज्वारी', 'Season':'Kharif_Main'},
+	'cotton': {'Marathi' : 'कापूस', 'Season':'Long_kharif'},
+	'udid': {'Marathi' : 'उडिद', 'Season':'Kharif_Main'},
+	'orange': {'Marathi' : 'संत्रा', 'Season':'Annual'},
+	'rice': {'Marathi' : 'भात', 'Season':'Long_kharif'},
+	'sunflower': {'Marathi' : 'खरीप सुर्यफुल', 'Season':'Kharif_Main'},
+	'tur': {'Marathi' : 'तूर', 'Season':'Long_kharif'},
+	'grapes': {'Marathi' : 'द्राक्ष', 'Season':'Annual'},
+	'maize': {'Marathi' : 'मका', 'Season':'Kharif_Main'},
+	'current fallow crop': {'Marathi' : 'कायम पड (गावठाणसह)', 'Season': 'Landuse'},
+	'forest': {'Marathi' : 'वनक्षेत्र', 'Season':'Landuse'},
+	'wasteland': {'Marathi' : 'पोटखराबा', 'Season':'Landuse'},
+	'scrub': {'Marathi' : 'गायरान', 'Season':'Landuse'}
+	}
 #Long Kharif crops list
 long_kharif_crops = ['cotton','orange','grapes','tur']
 
