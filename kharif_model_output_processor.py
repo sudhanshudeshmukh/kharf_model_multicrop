@@ -79,7 +79,6 @@ class KharifModelOutputProcessor:
 				zb.GW_rech_total = np.sum([p.budget.GW_rech_total	for p in all_agricultural_points], 0) / no_of_agricultural_points
 				zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
 				zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-			
 			no_of_non_ag_lulc_type_points = {}
 			for lulc_type in non_agricultural_points_dict:
 				lulc_type_points = non_agricultural_points_dict[lulc_type]
@@ -175,100 +174,116 @@ class KharifModelOutputProcessor:
 		print("---")'''
 		return zonewise_budgets
 	
-	def output_zonewise_budget_to_csv(self, zonewise_budgets, crops, currnet_fallow, pseudo_crops, zonewise_budget_csv_filepath, rain_sum):
+	def output_zonewise_budget_to_csv(self, zonewise_budgets, crops,rabi_crop_names, currnet_fallow, pseudo_crops, zonewise_budget_csv_filepath, rain_sum):
 		csvwrite = open(zonewise_budget_csv_filepath,'wb')
 		writer = csv.writer(csvwrite)
 		rows =[]
 
 		rows.append(['Village Name']
 			+ [str(ID).rsplit('-',1)[0] for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [str(ID).rsplit('-',1)[0] for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
 			+ [str(ID).rsplit('-',1)[0] for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID]  for crop in currnet_fallow ]
 			+ [str(ID).rsplit('-',1)[0] for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 			)
 
 		rows.append(['Census Code']
 			+ [self.zone_area_village[ID]['code']	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [self.zone_area_village[ID]['code']	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
 			+ [self.zone_area_village[ID]['code']	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID]  for crop in currnet_fallow ]
 			+ [self.zone_area_village[ID]['code']	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['Zone']
 			+ ['zone-'+str(ID)	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ ['zone-'+str(ID)	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
 			+ ['zone-'+str(ID)	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID]  for crop in currnet_fallow ]
 			+ ['zone-'+str(ID)	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		
 		rows.append(['Zone Area (ha)']
 			+ [self.zone_area_village[ID]['area']	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [self.zone_area_village[ID]['area']	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
 			+ [self.zone_area_village[ID]['area']	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID]  for crop in currnet_fallow ]
 			+ [self.zone_area_village[ID]['area']	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		
 		rows.append(['Crops in English']
 			+ [crop.name	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [crop	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
 			+ [crop.name	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow]
 			+ [pseudo_crop.name	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['Crops in Marathi']
 			+ [dict_crop_marathi_season[crop.name]['Marathi']	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [dict_crop_marathi_season[crop]['Marathi']	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
 			+ [dict_crop_marathi_season[crop.name]['Marathi']	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow]
 			+ [dict_crop_marathi_season[pseudo_crop.name]['Marathi']	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['Crop Season and Landuse']
 			+ [dict_crop_marathi_season[crop.name]['Season']	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [dict_crop_marathi_season[crop]['Season']	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
 			+ [dict_crop_marathi_season[crop.name]['Season']	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow]
 			+ [dict_crop_marathi_season[pseudo_crop.name]['Season']	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['Rainfall (mm)']
 			+ [rain_sum	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [rain_sum	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(rabi_crop_names))]
 			+ [rain_sum	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow ]
 			+ [rain_sum for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		
 		rows.append(['PET Monsoon End']
 			+ [crop.PET_sum_monsoon.item() for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for crop in crops]
+			+ [0 for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for crop in rabi_crop_names]
 			+ [crop.PET_sum_monsoon.item() for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow ]
 			+ [pseudo_crop.PET_sum_monsoon.item() for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['AET Monsoon End']
 			+ [zonewise_budgets[ID]['agricultural'].AET_monsoon_end[i].item() for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for i in range(len(crops))]
+			+ [0 for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for i in range(len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].AET_monsoon_end[i].item() for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].AET_monsoon_end[0].item() for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['Monsoon Deficit(PET-AET)']
 			+ [zonewise_budgets[ID]['agricultural'].PET_minus_AET_monsoon_end[i].item()	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [0	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].PET_minus_AET_monsoon_end[i].item()	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].PET_minus_AET_monsoon_end[0].item() for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		rows.append(['GW Recharge in Monsoon']
 			+ [zonewise_budgets[ID]['agricultural'].GW_rech_monsoon_end[i].item() for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [0 for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].GW_rech_monsoon_end[i].item() for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].GW_rech_monsoon_end[0].item() for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		rows.append(['Runoff in Monsoon (mm)']
 			+ [zonewise_budgets[ID]['agricultural'].runoff_monsoon_end[i].item() for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [0 for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].runoff_monsoon_end[i].item() for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].runoff_monsoon_end[0].item() for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		
 		rows.append(['Soil Moisture Monsoon end']
 			+ [zonewise_budgets[ID]['agricultural'].sm_monsoon_end[i].item()	for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [0	for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].sm_monsoon_end[i].item()	for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].sm_monsoon_end[0].item()	for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['Post Monsoon PET']
 			+ [crop.PET_sum_cropend.item() - crop.PET_sum_monsoon.item() for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [dict_rabi_crop[crop] for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
 			+ [crop.PET_sum_cropend.item() - crop.PET_sum_monsoon.item() for ID in zonewise_budgets	if 'currnet fallow'in zonewise_budgets[ID]  for crop in currnet_fallow ]
 			+ [pseudo_crop.PET_sum_cropend.item() - pseudo_crop.PET_sum_monsoon.item()	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		rows.append(['Infiltration in Monsoon (mm)']
 			+ [zonewise_budgets[ID]['agricultural'].infil_monsoon_end[i].item() for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [0 for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].infil_monsoon_end[i].item() for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].infil_monsoon_end[0].item() for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
@@ -276,36 +291,42 @@ class KharifModelOutputProcessor:
 
 		rows.append(['Soil Moisture Crop end']
 			+ [zonewise_budgets[ID]['agricultural'].sm_crop_end[i]	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [0	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].sm_crop_end[i]	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].sm_crop_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['AET Crop End']
 			+ [zonewise_budgets[ID]['agricultural'].AET_crop_end[i]	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [0	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for i in range(len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].AET_crop_end[i]	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].AET_crop_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['PET Crop End']
 			+ [crop.PET_sum_cropend	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [0	for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
 			+ [crop.PET_sum_cropend	for ID in zonewise_budgets	if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow ]
 			+ [pseudo_crop.PET_sum_cropend	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 		
 		rows.append(['Crop duration Deficit(PET-AET)']
 			+ [zonewise_budgets[ID]['agricultural'].PET_minus_AET_crop_end[i]	for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(crops))]
+			+ [0	for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range(len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].PET_minus_AET_crop_end[i]	for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].PET_minus_AET_crop_end[0]	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['Post Monsoon Ground Water']
 			+ [zonewise_budgets[ID]['agricultural'].GW_rech_total[i] - zonewise_budgets[ID]['agricultural'].GW_rech_monsoon_end[i] for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range (len(crops))]
+			+ [0 for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range (len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].GW_rech_total[i] - zonewise_budgets[ID]['currnet fallow'].GW_rech_monsoon_end[i] for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].GW_rech_total[0] - zonewise_budgets[ID][pseudo_crop.name].GW_rech_monsoon_end[0] for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID] ]
 			)
 
 		rows.append(['Post Monsoon Runoff']
 			+ [zonewise_budgets[ID]['agricultural'].runoff_total[i] - zonewise_budgets[ID]['agricultural'].runoff_monsoon_end[i] for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range (len(crops))]
+			+ [0 for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID] for i in range (len(rabi_crop_names))]
 			+ [zonewise_budgets[ID]['currnet fallow'].runoff_total[i] - zonewise_budgets[ID]['currnet fallow'].runoff_monsoon_end[i] for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].runoff_total[0] - zonewise_budgets[ID][pseudo_crop.name].runoff_monsoon_end[0] for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID] ]
 			)

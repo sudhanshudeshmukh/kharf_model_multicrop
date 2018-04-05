@@ -188,8 +188,44 @@ dict_crop_marathi_season ={
 	'current fallow crop': {'Marathi' : 'कायम पड (गावठाणसह)', 'Season': 'Landuse'},
 	'forest': {'Marathi' : 'वनक्षेत्र', 'Season':'Landuse'},
 	'wasteland': {'Marathi' : 'पोटखराबा', 'Season':'Landuse'},
-	'scrub': {'Marathi' : 'गायरान', 'Season':'Landuse'}
+	'scrub': {'Marathi' : 'गायरान', 'Season':'Landuse'},
+	'rabi_sorghum' : {'Marathi' : 'रबी ज्वारी', 'Season':'Rabi'},
+	'harbhara' : {'Marathi' : 'हरभरा', 'Season':'Rabi'},
+	'rabi_maize' : {'Marathi' : 'रबी मका', 'Season':'Rabi'},
+	'rabi_onion' : {'Marathi' : 'रबी कांदा', 'Season':'Rabi'},
+	'rabi_mirchi' : {'Marathi' : 'रबी मिरची', 'Season':'Rabi'},
+	'rabi_tomato' : {'Marathi' : 'रबी टोमेटो', 'Season':'Rabi'},
+	'rabi_brinjal' : {'Marathi' : 'रबी वांगे', 'Season':'Rabi'},
+	'rabi_vegetables' : {'Marathi' : 'रबी भाजीपाला', 'Season':'Rabi'},
+	'rabi_cauliflower' : {'Marathi' : 'रबी फुल कोबी', 'Season':'Rabi'},
+	'rabi_potato' : {'Marathi' : 'रबी बटाटा', 'Season':'Rabi'},
+	'rabi_okra' : {'Marathi' : 'रबी भेंडी', 'Season':'Rabi'},
+	'rabi_groundnut' : {'Marathi' : 'रबी भुईमुग', 'Season':'Rabi'},
+	'rabi_sunflower' : {'Marathi' : 'रबी सुर्यफुल', 'Season':'Rabi'},
+	'rabi_fodder' : {'Marathi' : 'रबी चारा पिके', 'Season':'Rabi'},
+	'rabi_wheat' : {'Marathi' : 'रबी गहू', 'Season':'Rabi'},
+
 	}
+
+#Rabi crop with their PET values
+dict_rabi_crop ={
+	'rabi_sorghum' : 425,
+	'harbhara' : 250,
+	'rabi_maize' : 500,
+	'rabi_onion' : 350,
+	'rabi_mirchi' : 800,
+	'rabi_tomato' : 400,
+	'rabi_brinjal' : 650,
+	'rabi_vegetables' : 350,
+	'rabi_cauliflower' : 350,
+	'rabi_potato' : 500,
+	'rabi_okra' : 550,
+	'rabi_groundnut' : 650,
+	'rabi_sunflower' : 400,
+	'rabi_fodder' : 350,
+	'rabi_wheat' : 500
+	}
+
 #Long Kharif crops list
 long_kharif_crops = ['cotton','orange','grapes','tur']
 

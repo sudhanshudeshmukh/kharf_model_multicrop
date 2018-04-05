@@ -215,11 +215,12 @@ class KharifModel:
 				self.modelCalculator.zone_points_dict ,
 				self.modelCalculator.zone_points_dict_current_fallow, 
 				self.modelCalculator.zone_points_dict_diff_LU,
-				self.modelCalculator.zones_layer 
+				self.modelCalculator.zones_layer
 			)
 			op.output_zonewise_budget_to_csv	(
 				zonewise_budgets,
 				self.modelCalculator.crops,
+				self.rabi_crop_names,
 				self.modelCalculator.currnet_fallow,
 				self.modelCalculator.LULC_pseudo_crops.values(),
 				os.path.join(self.base_path, ZONEWISE_BUDGET_CSV_FILENAME),
@@ -319,6 +320,7 @@ class KharifModel:
 			self.monsoon_end_date_index = self.dlg.monsoon_end.value()+122
 
 			self.crop_names = self.dlg.crops
+			self.rabi_crop_names = self.dlg.rabi_crops
 			if len(self.crop_names) == 0:    raise Exception('No crop selected')
 			self.output_configuration = {}
 			self.output_configuration['graduated_rendering_interval_points'] = [

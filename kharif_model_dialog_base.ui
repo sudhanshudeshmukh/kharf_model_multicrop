@@ -390,7 +390,7 @@
    <widget class="QLabel" name="label_13">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>140</x>
       <y>270</y>
       <width>171</width>
       <height>16</height>
@@ -416,7 +416,7 @@
    <widget class="QSpinBox" name="monsoon_end">
     <property name="geometry">
      <rect>
-      <x>350</x>
+      <x>190</x>
       <y>290</y>
       <width>71</width>
       <height>22</height>
@@ -424,6 +424,45 @@
     </property>
     <property name="maximum">
      <number>31</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_14">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>270</y>
+      <width>91</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Rabi Crops:</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="selected_rabi_crops">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>290</y>
+      <width>191</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="rabi_crops_select_button">
+    <property name="geometry">
+     <rect>
+      <x>530</x>
+      <y>290</y>
+      <width>51</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Select</string>
     </property>
    </widget>
   </widget>

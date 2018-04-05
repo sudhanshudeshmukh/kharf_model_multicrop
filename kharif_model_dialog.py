@@ -27,7 +27,7 @@ from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QFileDialog
 from configuration import *
 
-from constants_dicts_lookups import dict_crop
+from constants_dicts_lookups import dict_crop,dict_rabi_crop
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'kharif_model_dialog_base.ui'))
@@ -48,6 +48,7 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 		
 		self.last_path = ''
 		self.crops = []
+		self.rabi_crops = []
 		self.sowing_threshold.setValue(DEFAULT_SOWING_THRESHOLD)
 		self.monsoon_end.setValue(MONSOON_END_DATE_INDEX-122)
 		self.folder_path_browse.clicked.connect(lambda : self.on_browse(self.folder_path, 'Folder containing the data-set', folder=True))
@@ -59,6 +60,8 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 		self.drainage_layer_browse.clicked.connect(lambda : self.on_browse(self.drainage_layer_filename, 'Drainage Vector Layer', 'Shapefiles (*.shp)'))
 		self.rainfall_csv_browse.clicked.connect(lambda : self.on_browse(self.rainfall_csv_filename, 'Daily Rainfall CSV File', 'CSV files (*.csv)'))
 		self.crops_select_button.clicked.connect(lambda : self.on_crop_select_button())
+		self.rabi_crops_select_button.clicked.connect(lambda : self.on_rabi_crop_select_button())
+		
 		self.save_image_browse.clicked.connect(lambda : self.on_browse(self.save_image_filename, 'Save As Image In Folder', 'PNG files (*.png)', folder=True, save=True))
 		
 		self.colour_code_interval_points = [0, 100]
@@ -120,3 +123,12 @@ class KharifModelDialog(QtGui.QDialog, FORM_CLASS):
 		if crops_selection_dialog.exec_() == QFileDialog.Rejected:	return
 		self.crops = filter(lambda crop: eval("hasattr(csd, '"+crop+"') and csd."+crop+".isChecked()", {"csd": crops_selection_dialog}), sorted(dict_crop.keys()))
 		self.selected_crops.setText(', '.join(self.crops))
+
+
+	def on_rabi_crop_select_button(self):
+		rabi_crops_selection_dialog = uic.loadUi(os.path.join(os.path.dirname(__file__), 'rabi_crops_selection_dialog.ui'))
+		for crop in self.rabi_crops:	eval("rabi_crops_selection_dialog."+crop+".setChecked(True)")
+		rabi_crops_selection_dialog.show()
+		if rabi_crops_selection_dialog.exec_() == QFileDialog.Rejected:	return
+		self.rabi_crops = filter(lambda crop: eval("hasattr(csd, '"+crop+"') and csd."+crop+".isChecked()", {"csd": rabi_crops_selection_dialog}), sorted(dict_rabi_crop.keys()))
+		self.selected_rabi_crops.setText(', '.join(self.rabi_crops))

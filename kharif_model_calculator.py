@@ -481,7 +481,7 @@ class KharifModelCalculator:
 				for point in self.zone_points_dict_diff_LU[zone_id][lulc]:
 					point.run_model(self.rain, [self.LULC_pseudo_crops[lulc]], start_date_index, end_date_index, monsoon_end_date_index,lulc)
 	
-
+		
 		self.filter_out_cadastral_plots_outside_boundary()
 		self.output_cadastral_points = self.generate_output_points_for_cadastral_plots()
 		self.set_container_polygon_of_points_for_layers(self.output_cadastral_points, [self.soil_layer, self.lulc_layer, self.cadastral_layer])
