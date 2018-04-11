@@ -10,7 +10,7 @@ DEBUG_OR_TEST_GRADUATED_RENDERING_INTERVAL_POINTS = [0, 50]
 RAINFALL_CSV_FILENAME = 'Rainfall.csv'
 ET0_CSV_FILENAME = 'ET0_file.csv'
 POINTWISE_OUTPUT_CSV_FILENAME = 'kharif_model_pointwise_output.csv'
-ZONEWISE_BUDGET_CSV_FILENAME = 'kharif_model_zonewise_budget.csv'
+ZONEWISE_BUDGET_CSV_FILENAME = 'kharif_model_zonewise_budget.xls'
 CADESTRAL_VULNERABILITY_CSV_FILENAME = 'kharif_model_cadastral_vulnerability.csv'
 #	Optional inputs for debugging/testing
 OVERRIDE_FILECROPS_BY_DEBUG_OR_TEST_CROPS = True

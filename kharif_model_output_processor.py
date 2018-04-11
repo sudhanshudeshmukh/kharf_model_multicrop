@@ -1,4 +1,5 @@
 import csv
+
 import itertools
 from collections import OrderedDict
 import numpy as np
@@ -175,8 +176,8 @@ class KharifModelOutputProcessor:
 		return zonewise_budgets
 	
 	def output_zonewise_budget_to_csv(self, zonewise_budgets, crops,rabi_crop_names, currnet_fallow, pseudo_crops, zonewise_budget_csv_filepath, rain_sum):
-		csvwrite = open(zonewise_budget_csv_filepath,'wb')
-		writer = csv.writer(csvwrite)
+		# csvwrite = open(zonewise_budget_csv_filepath,'wb')
+		# writer = csv.writer(csvwrite)
 		rows =[]
 
 		rows.append(['Village Name']
@@ -274,7 +275,7 @@ class KharifModelOutputProcessor:
 			+ [zonewise_budgets[ID]['currnet fallow'].sm_monsoon_end[i].item()	for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for i in range(len(currnet_fallow)) ]
 			+ [zonewise_budgets[ID][pseudo_crop.name].sm_monsoon_end[0].item()	for ID in zonewise_budgets for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
-
+		
 		rows.append(['Post Monsoon PET']
 			+ [crop.PET_sum_cropend.item() - crop.PET_sum_monsoon.item() for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
 			+ [dict_rabi_crop[crop] for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
@@ -333,11 +334,17 @@ class KharifModelOutputProcessor:
 
 		cols = zip(*rows)
 		cols.sort(key =  lambda x: x[2])
+		# writer.writerows(cols)
 
+		# csvwrite.close()
 
-		writer.writerows(cols)
-		csvwrite.close()
-
+		import xlwt
+		xldoc = xlwt.Workbook(encoding = 'utf-8')
+		sheet1 = xldoc.add_sheet("Sheet1", cell_overwrite_ok=True)
+		for row,cont in enumerate(cols):
+		    for col,val in enumerate(cont):
+        		sheet1.write(row,col,str(val))
+		xldoc.save(zonewise_budget_csv_filepath)
 
 
 		'''writer.writerow(['']

@@ -121,7 +121,7 @@ dict_SoilProperties = {
 dict_RO = {
 	'agriculture': {'A': 67, 'B': 78, 'C': 85, 'D': 89},
 	'forest': {'A': 30, 'B': 55, 'C': 70, 'D': 77},
-	'fallow land': {'A': 77, 'B': 86, 'C': 91, 'D': 94},
+ 	'fallow land': {'A': 77, 'B': 86, 'C': 91, 'D': 94},
 	'habitation': {'A': 77, 'B': 85, 'C': 90, 'D': 92},
 	'scrub': {'A': 49, 'B': 69, 'C': 79, 'D': 84},
 	'wasteland': {'A': 68, 'B': 79, 'C': 86, 'D': 89},
