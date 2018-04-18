@@ -285,7 +285,6 @@ class KharifModelCalculator:
 		
 		zone_polygon_ids = self.zones_layer.feature_dict.keys()
 		self.zone_points_dict = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
-		self.zone_points_dict_current_fallow = dict(zip(zone_polygon_ids, [[]	for i in range(len(zone_polygon_ids))]))
 		cadastral_polygon_ids = self.cadastral_layer.feature_dict.keys()
 		
 		self.slope_layer = slope_layer
@@ -350,9 +349,6 @@ class KharifModelCalculator:
 				filtered_points.append(point)
 		self.output_grid_points = filtered_points
 	
-	def filter_point_zonewise(self):
-		for point in self.output_grid_points_current_fallow:
-			self.zone_points_dict_current_fallow[point.zone_polygon.id()].append(point)
 
 	def filter_out_cadastral_plots_outside_boundary(self):
 		#~ QgsGeometryAnalyzer().dissolve(self.zones_layer.qgsLayer, 'temp.shp')
@@ -459,8 +455,6 @@ class KharifModelCalculator:
 		print 'Number of grid points to process : ', len(self.output_grid_points)
 		for zone_id in self.zone_points_dict:
 			self.zone_points_dict[zone_id] = filter(lambda p:	p.lulc_type not in ['water','habitation'], self.zone_points_dict[zone_id])
-		self.output_grid_points_current_fallow = [Point.copyPoint(point) for point in self.output_grid_points if point.lulc_type in ['agriculture', 'fallow land']]
-		self.filter_point_zonewise()
 		count = 0 
 		for point in self.output_grid_points:
 			count += 1
@@ -469,19 +463,31 @@ class KharifModelCalculator:
 				point.run_model(self.rain, self.crops, start_date_index, end_date_index, monsoon_end_date_index, dict_lulc[point.container_polygons[LULC_LABEL][Desc].lower()])
 			else:
 				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index, monsoon_end_date_index, dict_lulc[point.container_polygons[LULC_LABEL][Desc].lower()] ) 
-		for point in self.output_grid_points_current_fallow:
-			count += 1
-			if count % 100 == 0:	print count
-			point.run_model(self.rain, self.currnet_fallow, start_date_index, end_date_index, monsoon_end_date_index,'current fallow')
+
 		self.non_ag_points = {zone_id: filter(lambda p: p.lulc_type in dict_LULC_pseudo_crop, self.zone_points_dict[zone_id] ) for zone_id in self.zone_points_dict}
+		self.ag_points = {zone_id: filter(lambda p: p.lulc_type in ['agriculture', 'fallow land'], self.zone_points_dict[zone_id] ) for zone_id in self.zone_points_dict}
 		self.non_ag_points_type = {zone_id : {lulc: filter(lambda p : p.lulc_type == lulc, self.non_ag_points[zone_id]) for lulc in dict_LULC_pseudo_crop} for zone_id in self.non_ag_points}
-		self.zone_points_dict_diff_LU = {zone_id : {lulc:map(Point.copyPoint,self.non_ag_points[zone_id]) if (len(self.non_ag_points_type[zone_id][lulc]) == 0) else [] for lulc in self.non_ag_points_type[zone_id]} for zone_id in self.non_ag_points_type}
-		for zone_id in self.zone_points_dict_diff_LU:
-			for lulc in self.zone_points_dict_diff_LU[zone_id]:
-				for point in self.zone_points_dict_diff_LU[zone_id][lulc]:
+
+		self.zone_points_dict_non_ag_missing_LU = {zone_id : {lulc:map(Point.copyPoint,self.ag_points[zone_id]) if (len(self.non_ag_points[zone_id]) == 0) else map(Point.copyPoint,self.non_ag_points[zone_id]) if (len(self.non_ag_points_type[zone_id][lulc]) == 0) else [] for lulc in self.non_ag_points_type[zone_id]} for zone_id in self.non_ag_points_type}
+		self.zone_points_dict_ag_missing = {zone_id : map(Point.copyPoint,self.non_ag_points[zone_id]) if (len(self.ag_points[zone_id]) == 0)  else [] for zone_id in self.ag_points}
+		self.zone_points_dict_current_fallow =  {zone_id: map(Point.copyPoint,self.ag_points[zone_id]) if (len(self.ag_points[zone_id]) != 0) else map(Point.copyPoint,self.non_ag_points[zone_id]) if (len(self.non_ag_points_type[zone_id]) != 0) else [] for zone_id in self.ag_points }
+
+		#For zones not having in Non Ag type
+		for zone_id in self.zone_points_dict_non_ag_missing_LU:
+			for lulc in self.zone_points_dict_non_ag_missing_LU[zone_id]:
+				for point in self.zone_points_dict_non_ag_missing_LU[zone_id][lulc]:
 					point.run_model(self.rain, [self.LULC_pseudo_crops[lulc]], start_date_index, end_date_index, monsoon_end_date_index,lulc)
-	
-		
+		#For zones not having Ag points
+		for zone_id in self.zone_points_dict_ag_missing:
+			for point in self.zone_points_dict_ag_missing[zone_id]:
+				point.run_model(self.rain, self.crops, start_date_index, end_date_index, monsoon_end_date_index,'agriculture')
+
+		#For Current fallow:
+		for zone_id in self.zone_points_dict_current_fallow:
+			for point in self.zone_points_dict_current_fallow[zone_id]:
+				point.run_model(self.rain, self.currnet_fallow, start_date_index, end_date_index, monsoon_end_date_index,'current fallow')
+
+
 		self.filter_out_cadastral_plots_outside_boundary()
 		self.output_cadastral_points = self.generate_output_points_for_cadastral_plots()
 		self.set_container_polygon_of_points_for_layers(self.output_cadastral_points, [self.soil_layer, self.lulc_layer, self.cadastral_layer])
@@ -499,6 +505,6 @@ class KharifModelCalculator:
 				point.run_model(self.rain, [self.LULC_pseudo_crops[point.lulc_type]], start_date_index, end_date_index, monsoon_end_date_index,dict_lulc[point.container_polygons[LULC_LABEL][Desc].lower()])
 		print 'done'
 		return
-		
+
 		print("--- %s seconds ---" % (time.time() - start_time))
 		print("done")

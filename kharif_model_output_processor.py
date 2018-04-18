@@ -46,7 +46,7 @@ class KharifModelOutputProcessor:
 							)
 		csvwrite.close()
 	
-	def compute_zonewise_budget(self, zone_points_dict, zone_points_dict_current_fallow, zone_points_dict_diff_LU, zones_layer):
+	def compute_zonewise_budget(self, zone_points_dict,zone_points_dict_ag_missing, zone_points_dict_current_fallow, zone_points_dict_non_ag_missing_LU, zones_layer):
 		zonewise_budgets = OrderedDict()
 		self.zone_area_village =OrderedDict()
 		for zone_id in zone_points_dict:
@@ -105,12 +105,6 @@ class KharifModelOutputProcessor:
 
 			fallow_points = zone_points_dict_current_fallow[zone_id]
 			no_of_fallow_points = len(fallow_points)
-			if no_of_fallow_points == 0:	continue
-			
-			if(zones_layer.qgsLayer.fieldNameIndex('Zone_name') != -1):
-				zone_name = zones_layer.feature_dict[zone_id]['Zone_name']
-			else:
-				zone_name = zone_id
 			
 			if (no_of_fallow_points != 0):
 				zb = zonewise_budgets[zone_name]['currnet fallow'] = Budget()
@@ -129,15 +123,15 @@ class KharifModelOutputProcessor:
 				zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points
 				zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in fallow_points], 0) / no_of_fallow_points
 
-		for zone_id in zone_points_dict_diff_LU:
+		for zone_id in  zone_points_dict_non_ag_missing_LU:
 			if(zones_layer.qgsLayer.fieldNameIndex('Zone_name') != -1):
 				zone_name = zones_layer.feature_dict[zone_id]['Zone_name']
 			else:
 				zone_name = zone_id
 			
 			no_of_diif_LU_points={}
-			for lulc in zone_points_dict_diff_LU[zone_id]:
-				diif_LU_points = zone_points_dict_diff_LU[zone_id][lulc]
+			for lulc in  zone_points_dict_non_ag_missing_LU[zone_id]:
+				diif_LU_points =  zone_points_dict_non_ag_missing_LU[zone_id][lulc]
 				no_of_diif_LU_points[lulc] = len(diif_LU_points)
 				if no_of_diif_LU_points[lulc] != 0:
 					zb = zonewise_budgets[zone_name][lulc] = Budget()
@@ -155,6 +149,31 @@ class KharifModelOutputProcessor:
 					zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
 					zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
 
+		for zone_id in  zone_points_dict_ag_missing:
+			if(zones_layer.qgsLayer.fieldNameIndex('Zone_name') != -1):
+				zone_name = zones_layer.feature_dict[zone_id]['Zone_name']
+			else:
+				zone_name = zone_id
+			
+			ag_from_non_ag_points = zone_points_dict_ag_missing[zone_id]
+			no_of_ag_from_non_ag_points = len(ag_from_non_ag_points)
+			
+			if (no_of_ag_from_non_ag_points != 0):
+				zb = zonewise_budgets[zone_name]['agricultural'] = Budget()
+				zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.AET_monsoon_end = np.sum([p.budget.AET_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.runoff_monsoon_end = np.sum([p.budget.runoff_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.runoff_crop_end = np.sum([p.budget.runoff_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.runoff_total = np.sum([p.budget.runoff_total	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points			
+				zb.sm_monsoon_end = np.sum([p.budget.sm_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.sm_crop_end = np.sum([p.budget.sm_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.infil_monsoon_end = np.sum([p.budget.infil_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.GW_rech_monsoon_end = np.sum([p.budget.GW_rech_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.GW_rech_crop_end = np.sum([p.budget.GW_rech_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.GW_rech_total = np.sum([p.budget.GW_rech_total	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
 
 
 			#~ zb = Budget()
@@ -337,14 +356,20 @@ class KharifModelOutputProcessor:
 		# writer.writerows(cols)
 
 		# csvwrite.close()
+		headers= cols[0]
+		village_list = {str(ID).rsplit('-',1)[0] for ID in zonewise_budgets}
+		data_by_village = {v: list([headers]) for v in village_list}
+		for entry in cols[1:]:
+			data_by_village[entry[0]].append(list(entry))
+		write_excel(cols,zonewise_budget_csv_filepath)
+		dir_path = os.path.dirname(zonewise_budget_csv_filepath)
+		for village in data_by_village:
+			file_name = "Village_wise_output_"+village+'.xls'
+			village_file_path = os.path.join(dir_path,file_name)
+			write_excel(data_by_village[village],village_file_path)
 
-		import xlwt
-		xldoc = xlwt.Workbook(encoding = 'utf-8')
-		sheet1 = xldoc.add_sheet("Sheet1", cell_overwrite_ok=True)
-		for row,cont in enumerate(cols):
-		    for col,val in enumerate(cont):
-        		sheet1.write(row,col,str(val))
-		xldoc.save(zonewise_budget_csv_filepath)
+
+
 
 
 		'''writer.writerow(['']
@@ -543,3 +568,13 @@ class KharifModelOutputProcessor:
 		QgsVectorFileWriter.writeAsVectorFormat(memory_cadastral_layer,
 												base_path + '/kharif_'+crop_name+'_cadastral_level_vulnerability.shp', "utf-8", None,
 												"ESRI Shapefile")
+
+
+def write_excel(data_to_write,output_file_path):
+	import xlwt
+	xldoc = xlwt.Workbook(encoding = 'utf-8')
+	sheet1 = xldoc.add_sheet("Sheet1", cell_overwrite_ok=True)
+	for row,cont in enumerate(data_to_write):
+	    for col,val in enumerate(cont):
+    		sheet1.write(row,col,str(val))
+	xldoc.save(output_file_path)

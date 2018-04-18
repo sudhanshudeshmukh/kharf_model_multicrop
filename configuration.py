@@ -4,6 +4,7 @@ PLUGIN_MODE = 'REAL'	#	Possible values: 'DEBUG', 'TEST-SUITE', 'REAL'
 DEBUG_BASE_FOLDER_PATH = 'D:\MTP related\Datasets\washim'
 TEST_SUITE_BASE_FOLDER_PATH = 'NO PATH YET'
 DEBUG_OR_TEST_CROPS = ['bajra']	#	Possible values: subset of dict_crop.keys()
+DEBUG_OR_TEST_RABI_CROPS = ['harbhara']
 DEBUG_OR_TEST_GRADUATED_RENDERING_INTERVAL_POINTS = [0, 50]
 
 #	Input-Output protocol constants
@@ -17,7 +18,7 @@ OVERRIDE_FILECROPS_BY_DEBUG_OR_TEST_CROPS = True
 CROPS_FILENAME = 'crops.csv'
 
 #	Computation Settings
-STEP = 300.0
+STEP = 200.0
 DEFAULT_SOWING_THRESHOLD = 30
 START_DATE_INDEX = 0
 MONSOON_END_DATE_INDEX = 132

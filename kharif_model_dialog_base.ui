@@ -154,12 +154,12 @@
      <rect>
       <x>20</x>
       <y>120</y>
-      <width>175</width>
+      <width>221</width>
       <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>Land-Use-Land-Cover Vector Layer :</string>
+     <string>LULC Vector Layer :</string>
     </property>
    </widget>
    <widget class="QLabel" name="label">
@@ -193,7 +193,7 @@
      <rect>
       <x>321</x>
       <y>72</y>
-      <width>118</width>
+      <width>161</width>
       <height>16</height>
      </rect>
     </property>
@@ -232,7 +232,7 @@
      <rect>
       <x>320</x>
       <y>120</y>
-      <width>141</width>
+      <width>181</width>
       <height>16</height>
      </rect>
     </property>
@@ -317,7 +317,7 @@
      <rect>
       <x>320</x>
       <y>170</y>
-      <width>121</width>
+      <width>151</width>
       <height>16</height>
      </rect>
     </property>

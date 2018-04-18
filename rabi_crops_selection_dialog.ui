@@ -44,7 +44,7 @@
    <property name="title">
     <string>Rabi Crops</string>
    </property>
-   <widget class="QCheckBox" name="sorghum">
+   <widget class="QCheckBox" name="rabi_sorghum">
     <property name="geometry">
      <rect>
       <x>10</x>

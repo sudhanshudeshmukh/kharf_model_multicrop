@@ -213,8 +213,9 @@ class KharifModel:
 			)
 			zonewise_budgets = op.compute_zonewise_budget	(
 				self.modelCalculator.zone_points_dict ,
+				self.modelCalculator.zone_points_dict_ag_missing,
 				self.modelCalculator.zone_points_dict_current_fallow, 
-				self.modelCalculator.zone_points_dict_diff_LU,
+				self.modelCalculator.zone_points_dict_non_ag_missing_LU,
 				self.modelCalculator.zones_layer
 			)
 			op.output_zonewise_budget_to_csv	(
@@ -297,6 +298,7 @@ class KharifModel:
 				if len(self.crop_names) == 0 :	raise Exception('No crop selected')
 			else:
 				self.crop_names = DEBUG_OR_TEST_CROPS
+			self.rabi_crop_names = DEBUG_OR_TEST_RABI_CROPS
 			self.output_configuration = {}
 			self.output_configuration['graduated_rendering_interval_points'] = DEBUG_OR_TEST_GRADUATED_RENDERING_INTERVAL_POINTS
 			
