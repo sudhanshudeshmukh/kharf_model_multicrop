@@ -133,7 +133,6 @@ class Point:
 	
 	def run_model(self, rain, crops, start_date_index, end_date_index, monsoon_end_date_index,lulc):
 		self.setup_for_daily_computations(crops,lulc)
-		
 		self.SM1_fraction = self.layer2_moisture = self.WP
 		
 		for day in range (start_date_index, end_date_index+1):
@@ -187,7 +186,6 @@ class Point:
 		self.budget.sm.append((self.SM1_fraction * self.SM1 + self.layer2_moisture * self.SM2) * 1000)
 		self.SW = self.budget.sm[-1] - self.WP_depth
 		S_swat = self.Smax*(1 - self.SW/(self.SW + np.exp(self.W1 - self.W2 * self.SW)))
-		
 		Cn_swat = 25400/(S_swat+254)
 		Ia_swat = 0.2 * S_swat
 		self.budget.runoff.append(	np.where(rain[day] > Ia_swat,
@@ -195,7 +193,7 @@ class Point:
 											0
 									)	)
 		self.budget.infil.append(rain[day] - self.budget.runoff[day])
-	
+
 	def aet(self, day, crops):
 		"""
 		Water Stress Coefficient 'KS' using FAO Irrigation and Drainage Paper 56, page 167 and
@@ -232,7 +230,7 @@ class Point:
 										0
 									 ))
 		self.SM2_before = (self.layer2_moisture*self.SM2*1000 + self.R_to_second_layer)/self.SM2/1000
-	
+
 	def secondary_runoff(self, day):
 		"""
 		
@@ -328,7 +326,7 @@ class KharifModelCalculator:
 			while i<=end :
 				yield i
 				i = i+step
-				 
+
 		# x_List = [749019.848090772]
 		# y_List = [2262579.4183734786]
 		# x_List = [743508]
