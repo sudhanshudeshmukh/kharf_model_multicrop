@@ -236,7 +236,7 @@ dict_crop_marathi_season ={
 	'turmeric': {'Marathi': ' हळद', 'Season': 'Long_Kharif'},
 	'vegetables': {'Marathi': ' "भाजीपाला (भेंडी, गावर, कारली ई.)"','Season': 'Kharif_Vegetables'},	
 	'current fallow crop': {'Marathi' : 'चालु पड', 'Season': 'Landuse'},
-	'permanant fallow crop': {'Marathi' : 'चालु पड', 'Season': 'Landuse'},
+	'permanant fallow crop': {'Marathi' : 'कायम पड (गावठाणसह)', 'Season': 'Landuse'},
 	'forest': {'Marathi' : 'वनक्षेत्र', 'Season':'Landuse'},
 	'wasteland': {'Marathi' : 'पोटखराबा', 'Season':'Landuse'},
 	'scrub': {'Marathi' : 'गायरान', 'Season':'Landuse'},
