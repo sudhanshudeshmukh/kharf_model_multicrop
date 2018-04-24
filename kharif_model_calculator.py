@@ -338,14 +338,12 @@ class KharifModelCalculator:
 				yield i
 				i = i+step
 
-		x_List = [633171]
-		y_List = [2018439]
 		# x_List = [749019.848090772]
 		# y_List = [2262579.4183734786]
 		# x_List = [743508]
 		# y_List = [2262526]
-		#x_List = [x for x in frange(xminB,xmaxB,STEP)]
-		#y_List = [x for x in frange(yminB,ymaxB,STEP)]
+		x_List = [x for x in frange(xminB,xmaxB,STEP)]
+		y_List = [x for x in frange(yminB,ymaxB,STEP)]
 		print len(x_List), len (y_List)
 		output_points = [Point(QgsPoint(x,y))	for x in x_List	for y in y_List]
 		return output_points
