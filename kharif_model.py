@@ -24,6 +24,7 @@ from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QDa
 from PyQt4.QtGui import QAction, QIcon, QFileDialog, QColor
 # Initialize Qt resources from file resources.py
 import resources
+import time
 # Import the code for the dialog
 from kharif_model_dialog import KharifModelDialog
 from kharif_model_output_processor import KharifModelOutputProcessor
@@ -188,6 +189,8 @@ class KharifModel:
 
 	def run(self):
 		"""Run method that performs all the real work"""
+
+		start_time = time.time()
 		
 		if PLUGIN_MODE == 'DEBUG':
 			if not os.path.exists(DEBUG_BASE_FOLDER_PATH):	raise Exception('Set DEBUG_BASE_FOLDER_PATH for the debug dataset')
@@ -199,7 +202,6 @@ class KharifModel:
 			paths = [base_path	for base_path in os.listdir(TEST_SUITE_BASE_FOLDER_PATH)	if os.path.isdir(base_path)]
 		for path in paths:
 			if self.fetch_inputs(path) is False:	return
-			
 			self.modelCalculator = KharifModelCalculator(self.path, self.et0, **self.input_layers)
 			self.modelCalculator.calculate(self.rain, self.crop_names, self.sowing_threshold, monsoon_end_date_index = self.monsoon_end_date_index)
 			
@@ -258,6 +260,9 @@ class KharifModel:
 					self.crop_names[i],
 					self.path
 				)
+		print("KM--- %s seconds ---" % (time.time() - start_time))
+		print self.plugin_dir
+
 	# self.iface.actionHideAllLayers().trigger()
 	# 	self.iface.legendInterface().setLayerVisible(self.input_layers['zones_layer'], True)
 	# 	if 'drainage_layer' in locals():	self.iface.legendInterface().setLayerVisible(self.input_layers['drainage_layer'], True)
@@ -286,7 +291,10 @@ class KharifModel:
 			self.input_layers['cadastral_layer'] = self.iface.addVectorLayer(os.path.join(path, 'Cadastral.shp'), 'Cadastral Map', 'ogr')
 			self.input_layers['slope_layer'] = self.iface.addRasterLayer(os.path.join(path, 'Slope.tif'), 'Slope')
 			#~ self.input_layers['drainage_layer'] = self.iface.addRasterLayer(os.path.join(path, 'Drainage.shp'), 'Drainage', 'ogr')
-			
+			data_dir = os.path.join(self.plugin_dir,'Data')
+			# self.input_layers['soil_layer'] = self.iface.addVectorLayer(os.path.join(data_dir, 'soil utm.shp'), 'Soil Cover', 'ogr')
+			# self.input_layers['lulc_layer'] = self.iface.addVectorLayer(os.path.join(data_dir, 'lulc utm.shp'), 'Land-Use-Land-Cover', 'ogr')
+
 			self.rain = [float(row["Rainfall"]) for row in csv.DictReader(open(os.path.join(path, RAINFALL_CSV_FILENAME)))]
 			et0_file_data = [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
 			self.et0 = set_et0_from_et0_file_data(et0_file_data)
@@ -329,3 +337,5 @@ class KharifModel:
 				int(self.dlg.colour_code_intervals_list_widget.item(i).text().split('-')[0])
 					for i in range(1,self.dlg.colour_code_intervals_list_widget.count())
 			]
+
+

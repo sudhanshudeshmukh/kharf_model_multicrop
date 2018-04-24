@@ -77,9 +77,9 @@
      </widget>
     </item>
     <item row="0" column="0">
-     <widget class="QCheckBox" name="bajra">
+     <widget class="QCheckBox" name="bajri">
       <property name="text">
-       <string>Bajra</string>
+       <string>Bajri</string>
       </property>
      </widget>
     </item>

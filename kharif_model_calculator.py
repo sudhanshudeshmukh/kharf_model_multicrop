@@ -50,16 +50,27 @@ class Budget:
 		self.PET_minus_AET_post_monsoon = np.array([(crops[i].PET_sum_cropend - self.AET_crop_end[i])-self.PET_minus_AET_monsoon_end[i]	for i in range(len(crops))])
 		self.PET_minus_AET_crop_end = np.array([crops[i].PET_sum_cropend - self.AET_crop_end[i]		for i in range(len(crops))])
 		# print self.GW_rech_monsoon_end
-		# gwl=[float(k[0]) for k in self.GW_rech.tolist()]
-		# ro =[float(k[0]) for k in self.runoff.tolist()]
-		# ssm = [float(k[0]) for k in self.sm.tolist()]
-		# infi = [float(k[0]) for k in self.infil.tolist()]
+		# self.gwl=[float(k[0]) for k in self.GW_rech.tolist()]
+		# self.ro =[float(k[0]) for k in self.runoff.tolist()]
+		# self.ssm = [float(k[0]) for k in self.sm.tolist()]
+		# self.infi = [float(k[0]) for k in self.infil.tolist()]
+		# self.aet = [float(k[0]) for k in self.AET.tolist()]
 		# a = [float(k[0]) for k in self.AET.tolist()]
 		# for j in range (0,150):
 		# 	print (ssm[j],ro[j],infi[j],a[j],gwl[j])
 		# print ssm
 		# print monsoon_end_date_index, end_date_index
 		# print self.sm_crop_end, self.sm_monsoon_end
+		# print "infil"
+		# print self.infi
+		# print "AET"
+		# print self.aet
+		# print "gw"
+		# print self.gwl
+		# print "sm"
+		# print self.ssm
+		# print "ro"
+		# print self.ro
 
 
 class Crop:
@@ -327,12 +338,14 @@ class KharifModelCalculator:
 				yield i
 				i = i+step
 
+		x_List = [633171]
+		y_List = [2018439]
 		# x_List = [749019.848090772]
 		# y_List = [2262579.4183734786]
 		# x_List = [743508]
 		# y_List = [2262526]
-		x_List = [x for x in frange(xminB,xmaxB,STEP)]
-		y_List = [x for x in frange(yminB,ymaxB,STEP)]
+		#x_List = [x for x in frange(xminB,xmaxB,STEP)]
+		#y_List = [x for x in frange(yminB,ymaxB,STEP)]
 		print len(x_List), len (y_List)
 		output_points = [Point(QgsPoint(x,y))	for x in x_List	for y in y_List]
 		return output_points
