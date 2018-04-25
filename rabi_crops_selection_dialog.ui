@@ -226,6 +226,19 @@
      <string>Fodder</string>
     </property>
    </widget>
+   <widget class="QCheckBox" name="rabi_wheat">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>140</y>
+      <width>81</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Wheat</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>

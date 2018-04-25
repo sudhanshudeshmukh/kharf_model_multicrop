@@ -338,6 +338,8 @@ class KharifModelCalculator:
 				yield i
 				i = i+step
 
+		# x_List = [633171]
+		# y_List = [2018439]
 		# x_List = [749019.848090772]
 		# y_List = [2262579.4183734786]
 		# x_List = [743508]
