@@ -26,7 +26,7 @@ CADASTRAL_LABEL = 'Cadastral'
 class Budget:
 	
 	def __init__(self):
-		self.sm, self.runoff, self.infil, self.AET, self.GW_rech = [],[],[],[],[]
+		self.sm, self.runoff, self.infil, self.AET, self.GW_rech, self.sec_run_off = [],[],[],[],[], []
 		
 	def summarize(self, crops, start_date_index, end_date_index , monsoon_end_date_index):
 		self.runoff = np.array(self.runoff)	
@@ -34,13 +34,14 @@ class Budget:
 		self.AET = np.array(self.AET)
 		self.GW_rech = np.array(self.GW_rech)
 		self.sm = np.array(self.sm)
+		self.sec_run_off = np.array(self.sec_run_off)
 		self.sm_crop_end = np.array([self.sm[crops[i].end_date_index][i]	for i in range(len(crops))])
  		self.sm_monsoon_end = np.array([self.sm[monsoon_end_date_index+1][i]	for i in range(len(crops))])
-		self.runoff_crop_end = [np.sum(self.runoff[start_date_index:crops[i].end_date_index+1,i])	for i in range(len(crops))]
-		self.runoff_monsoon_end = [np.sum(self.runoff[start_date_index:monsoon_end_date_index+1,i])	for i in range(len(crops))]
-		self.runoff_total = [np.sum(self.runoff[start_date_index:end_date_index+1,i])	for i in range(len(crops))]
-		self.infil_crop_end = [np.sum(self.infil[start_date_index:crops[i].end_date_index+1,i])	for i in range(len(crops))]
-		self.infil_monsoon_end = [np.sum(self.infil[start_date_index:monsoon_end_date_index+1,i]) for i in range(len(crops))]
+		self.runoff_crop_end = [np.sum(self.runoff[start_date_index:crops[i].end_date_index+1,i]) + np.sum(self.sec_run_off[start_date_index:crops[i].end_date_index+1,i]) for i in range(len(crops))]
+		self.runoff_monsoon_end = [np.sum(self.runoff[start_date_index:monsoon_end_date_index+1,i]) + np.sum(self.sec_run_off[start_date_index:monsoon_end_date_index+1,i]) for i in range(len(crops))]
+		self.runoff_total = [np.sum(self.runoff[start_date_index:end_date_index+1,i]) + np.sum(self.sec_run_off[start_date_index:end_date_index+1,i]) for i in range(len(crops))]
+		self.infil_crop_end = [np.sum(self.infil[start_date_index:crops[i].end_date_index+1,i]) - np.sum(self.sec_run_off[start_date_index:crops[i].end_date_index+1,i]) for i in range(len(crops))]
+		self.infil_monsoon_end = [np.sum(self.infil[start_date_index:monsoon_end_date_index+1,i]) - np.sum(self.sec_run_off[start_date_index:monsoon_end_date_index+1,i]) for i in range(len(crops))]
 		self.AET_crop_end = [np.sum(self.AET[start_date_index:crops[i].end_date_index+1,i])	for i in range(len(crops))]
 		self.AET_monsoon_end = [np.sum(self.AET[start_date_index:monsoon_end_date_index+1,i])	for i in range(len(crops))]
 		self.GW_rech_crop_end = [np.sum(self.GW_rech[start_date_index:crops[i].end_date_index+1,i])	for i in range(len(crops))]
@@ -246,11 +247,11 @@ class Point:
 		"""
 		
 		"""
-		sec_run_off = np.where(
+		self.budget.sec_run_off.append(np.where(
 							((self.SM1_before*self.SM1 - self.R_to_second_layer/1000)/self.SM1) > self.Sat,
 							(((self.SM1_before*self.SM1 - self.R_to_second_layer/1000)/self.SM1) - self.Sat) * self.SM1 * 1000,
 							0
-							)
+							))
 		self.SM1_fraction = np.minimum((self.SM1_before*self.SM1*1000 - self.R_to_second_layer)/self.SM1/1000,self.Sat)
 	
 	def percolation_to_GW(self, day):
