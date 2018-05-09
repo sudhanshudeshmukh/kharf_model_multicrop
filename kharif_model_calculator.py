@@ -412,6 +412,7 @@ class KharifModelCalculator:
 			if (None not in [
 				point.container_polygons[SOIL_LABEL],
 				point.container_polygons[LULC_LABEL],
+				point.container_polygons[BOUNDARY_LABEL],
 				point.slope
 			]):
 				filtered_points.append(point)
@@ -425,6 +426,10 @@ class KharifModelCalculator:
 				if point.slope is None:
 					log_file.write('Slope could not be obtained for point at: x = '
 								   + str(point.qgsPoint.x()) + ', y = ' + str(point.qgsPoint.y()))
+				if point.container_polygons[BOUNDARY_LABEL] is None:
+					log_file.write('Zone polygon could not be obtained for point at: x = '
+								   + str(point.qgsPoint.x()) + ', y = ' + str(point.qgsPoint.y()))
+
 		log_file.close()
 		return filtered_points
 
