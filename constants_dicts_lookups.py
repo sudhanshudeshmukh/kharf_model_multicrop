@@ -6,7 +6,7 @@ NEW_LU= 'LU_Type'
 Desc = 'Descriptio'
 TEX = 'TEXTURE'
 Depth = 'DEPTH'
-
+Circle = 'Circle'
 ########	Constants End	########
 
 

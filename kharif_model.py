@@ -34,6 +34,7 @@ from kharif_model_calculator import KharifModelCalculator
 from qgis.core import QgsMapLayerRegistry, QgsVectorLayer, QgsSymbolV2, QgsRendererRangeV2, QgsGraduatedSymbolRendererV2, QgsVectorFileWriter
 from constants_dicts_lookups import *
 from configuration import *
+from collections import OrderedDict
 
 class KharifModel:
 	"""QGIS Plugin Implementation."""
@@ -209,7 +210,7 @@ class KharifModel:
 
 			op = KharifModelOutputProcessor()
 			op.output_point_results_to_csv	(
-				self.modelCalculator.output_grid_points,
+ 				self.modelCalculator.output_grid_points,
 				pointwise_output_csv_filepath,
 				crops=[crop.name for crop in self.modelCalculator.crops]
 			)
@@ -227,7 +228,7 @@ class KharifModel:
 				self.modelCalculator.currnet_fallow,
 				self.modelCalculator.LULC_pseudo_crops.values(),
 				os.path.join(self.base_path, ZONEWISE_BUDGET_CSV_FILENAME),
-				sum(self.rain[START_DATE_INDEX : self.monsoon_end_date_index+1])
+				self.rain_sum_monsoon
 			)
 			op.compute_and_output_cadastral_vulnerability_to_csv(
 				self.crop_names,
@@ -282,6 +283,7 @@ class KharifModel:
 				elif i == 8:		et0.extend([et0_file_data[i]]*28)
 				else:					et0.extend([et0_file_data[i]]*31)
 			return et0
+		self.rain=OrderedDict()
 		if path != '':
 			self.base_path = self.path = path
 			self.input_layers = {}
@@ -294,12 +296,17 @@ class KharifModel:
 			data_dir = os.path.join(self.plugin_dir,'Data')
 			# self.input_layers['soil_layer'] = self.iface.addVectorLayer(os.path.join(data_dir, 'soil utm.shp'), 'Soil Cover', 'ogr')
 			# self.input_layers['lulc_layer'] = self.iface.addVectorLayer(os.path.join(data_dir, 'lulc utm.shp'), 'Land-Use-Land-Cover', 'ogr')
+			csvreader=csv.reader(open(os.path.join(path, RAINFALL_CSV_FILENAME)))
+			next(csvreader)
+			self.rain = OrderedDict((row[0].lower(),{'year': row[1],'daily_rain':[float(val) for val in row[2:]]}) for row in csvreader)
+			self.rain['0'] = self.rain[next(iter(self.rain.keys()))]
 
-			self.rain = [float(row["Rainfall"]) for row in csv.DictReader(open(os.path.join(path, RAINFALL_CSV_FILENAME)))]
-			et0_file_data = [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
+			et0_file_data =  [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
 			self.et0 = set_et0_from_et0_file_data(et0_file_data)
 			self.sowing_threshold = DEFAULT_SOWING_THRESHOLD
 			self.monsoon_end_date_index = MONSOON_END_DATE_INDEX
+			self.rain_sum_monsoon={key:{'year':self.rain[key]['year'],'sum':sum(self.rain[key]['daily_rain'][START_DATE_INDEX : self.monsoon_end_date_index+1])} for key in self.rain.keys()}
+
 			if not OVERRIDE_FILECROPS_BY_DEBUG_OR_TEST_CROPS and os.path.exists(os.path.join(path, CROPS_FILENAME)):
 				self.crop_names = open(os.path.join(path, CROPS_FILENAME), 'r').read().split(',')
 				print (self.crop_names)
@@ -323,11 +330,18 @@ class KharifModel:
 			self.input_layers['slope_layer'] = self.iface.addRasterLayer(self.dlg.slope_layer_filename.text(), 'Slope')
 			if self.dlg.drainage_layer_filename.text() != '':
 				self.drainage_layer = self.iface.addVectorLayer(self.dlg.drainage_layer_filename.text(), 'Drainage', 'ogr')
-			self.rain = [float(row["Rainfall"]) for row in csv.DictReader(open(str(self.dlg.rainfall_csv_filename.text())))]
+
+
+			csvreader=csv.reader(open(str(self.dlg.rainfall_csv_filename.text())))
+			next(csvreader)
+			self.rain = OrderedDict((row[0].lower(),{'year': row[1],'daily_rain':[float(val) for val in row[2:]]}) for row in csvreader)
+			self.rain['0'] = self.rain[next(iter(self.rain.keys()))]
+
 			et0_file_data = [float(row["ET0"]) for row in csv.DictReader(open(os.path.join(path, ET0_CSV_FILENAME)))]
 			self.et0 = set_et0_from_et0_file_data(et0_file_data)
 			self.sowing_threshold = self.dlg.sowing_threshold.value()
 			self.monsoon_end_date_index = self.dlg.monsoon_end.value()+122
+			self.rain_sum_monsoon={key:{'year':self.rain[key]['year'],'sum':sum(self.rain[key]['daily_rain'][START_DATE_INDEX : self.monsoon_end_date_index+1])} for key in self.rain.keys()}
 
 			self.crop_names = self.dlg.crops
 			self.rabi_crop_names = self.dlg.rabi_crops
