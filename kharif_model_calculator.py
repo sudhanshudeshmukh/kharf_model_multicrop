@@ -170,8 +170,8 @@ class Point:
 		FC_depth = self.FC * self.depth_value * 1000
 		
 		root_depths = np.array([crop.root_depth	for crop in crops])
-		self.SM1 = np.where(self.depth_value <= root_depths, self.depth_value - 0.01, root_depths)
-		self.SM2 = np.where(self.depth_value <= root_depths, 0.01, self.depth_value - root_depths)
+		self.SM1 = np.where(self.depth_value <= root_depths, self.depth_value - 0.05, root_depths)
+		self.SM2 = np.where(self.depth_value <= root_depths, 0.05, self.depth_value - root_depths)
 
 		self.cn_val = dict_RO[lulc][self.HSG]
 		
