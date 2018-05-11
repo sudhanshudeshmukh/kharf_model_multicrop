@@ -384,14 +384,18 @@ class KharifModelCalculator:
 			polygon_geom = self.cadastral_layer.feature_dict[polygon_id].geometry()
 			if polygon_geom.contains(qgsPoint):
 				point = Point(qgsPoint)
+				point.cadastral_polygon = self.cadastral_layer.feature_dict[polygon_id]
+				output_cadastral_points.append(point)
+
 			else:
 				for feature in self.zones_layer.qgsLayer.getFeatures():
 					if polygon_geom.intersects(feature.geometry()):
 						polygon_intersection_some_zone = polygon_geom.intersection(feature.geometry())
-						point = Point(polygon_intersection_some_zone.pointOnSurface().asPoint())
-						break
-			point.cadastral_polygon = self.cadastral_layer.feature_dict[polygon_id]
-			output_cadastral_points.append(point)
+						if(polygon_intersection_some_zone.pointOnSurface()!=None):
+							point = Point(polygon_intersection_some_zone.pointOnSurface().asPoint())
+							point.cadastral_polygon = self.cadastral_layer.feature_dict[polygon_id]
+							output_cadastral_points.append(point)							
+							break
 		return output_cadastral_points
 	
 	def set_container_polygon_of_points_for_layers(self, points, polygon_vector_layers):
