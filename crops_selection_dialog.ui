@@ -56,9 +56,9 @@
      </widget>
     </item>
     <item row="2" column="2">
-     <widget class="QCheckBox" name="soyabean">
+     <widget class="QCheckBox" name="soybean">
       <property name="text">
-       <string>Soyabean</string>
+       <string>Soybean</string>
       </property>
      </widget>
     </item>
@@ -77,9 +77,9 @@
      </widget>
     </item>
     <item row="0" column="0">
-     <widget class="QCheckBox" name="bajri">
+     <widget class="QCheckBox" name="bajra">
       <property name="text">
-       <string>Bajri</string>
+       <string>Bajra</string>
       </property>
      </widget>
     </item>
@@ -154,9 +154,9 @@
      </widget>
     </item>
     <item row="0" column="3">
-     <widget class="QCheckBox" name="citrus">
+     <widget class="QCheckBox" name="lemon">
       <property name="text">
-       <string>Citrus</string>
+       <string>Lemon</string>
       </property>
      </widget>
     </item>
@@ -175,16 +175,16 @@
      </widget>
     </item>
     <item row="3" column="3">
-     <widget class="QCheckBox" name="mirchi">
+     <widget class="QCheckBox" name="chilly">
       <property name="text">
-       <string>Mirchi</string>
+       <string>Chilly</string>
       </property>
      </widget>
     </item>
     <item row="4" column="3">
-     <widget class="QCheckBox" name="mosambi">
+     <widget class="QCheckBox" name="sweetlime">
       <property name="text">
-       <string>Mosambi</string>
+       <string>Sweetlime</string>
       </property>
      </widget>
     </item>

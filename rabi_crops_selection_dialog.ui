@@ -57,7 +57,7 @@
      <string>Sorghum</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="harbhara">
+   <widget class="QCheckBox" name="gram">
     <property name="geometry">
      <rect>
       <x>110</x>
@@ -67,7 +67,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Harbhara</string>
+     <string>Gram</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="rabi_maize">
@@ -109,7 +109,7 @@
      <string>Tomato</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="rabi_mirchi">
+   <widget class="QCheckBox" name="rabi_chilly">
     <property name="geometry">
      <rect>
       <x>200</x>
@@ -119,7 +119,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Mirchi</string>
+     <string>Chilly</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="rabi_brinjal">
