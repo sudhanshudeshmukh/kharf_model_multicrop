@@ -67,39 +67,39 @@ class KharifModelOutputProcessor:
 			no_of_agricultural_points = len(all_agricultural_points)
 			if (no_of_agricultural_points != 0):
 				zb = zonewise_budgets[zone_name]['agricultural'] = Budget()
-				zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.AET_monsoon_end = np.sum([p.budget.AET_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.runoff_monsoon_end = np.sum([p.budget.runoff_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.runoff_crop_end = np.sum([p.budget.runoff_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.runoff_total = np.sum([p.budget.runoff_total	for p in all_agricultural_points], 0) / no_of_agricultural_points			
-				zb.sm_monsoon_end = np.sum([p.budget.sm_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.sm_crop_end = np.sum([p.budget.sm_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.infil_monsoon_end = np.sum([p.budget.infil_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.GW_rech_monsoon_end = np.sum([p.budget.GW_rech_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.GW_rech_crop_end = np.sum([p.budget.GW_rech_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.GW_rech_total = np.sum([p.budget.GW_rech_total	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
-				zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points
+				zb.AET_crop_end = np.round((np.sum([p.budget.AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points) , 2)
+				zb.AET_monsoon_end = np.round((np.sum([p.budget.AET_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)
+				zb.runoff_monsoon_end = np.round((np.sum([p.budget.runoff_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)
+				zb.runoff_crop_end = np.round((np.sum([p.budget.runoff_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)
+				zb.runoff_total = np.round((np.sum([p.budget.runoff_total	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)			
+				zb.sm_monsoon_end = np.round((np.sum([p.budget.sm_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points) ,2)
+				zb.sm_crop_end = np.round((np.sum([p.budget.sm_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)
+				zb.infil_monsoon_end = np.round((np.sum([p.budget.infil_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)
+				zb.AET_crop_end = np.round((np.sum([p.budget.AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)
+				zb.GW_rech_monsoon_end = np.round((np.sum([p.budget.GW_rech_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)
+				zb.GW_rech_crop_end = np.round((np.sum([p.budget.GW_rech_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points) ,2)
+				zb.GW_rech_total = np.round((np.sum([p.budget.GW_rech_total	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)
+				zb.PET_minus_AET_monsoon_end = np.round((np.sum([p.budget.PET_minus_AET_monsoon_end	for p in all_agricultural_points], 0) / no_of_agricultural_points), 2)
+				zb.PET_minus_AET_crop_end = np.round((np.sum([p.budget.PET_minus_AET_crop_end	for p in all_agricultural_points], 0) / no_of_agricultural_points) ,2)
 			no_of_non_ag_lulc_type_points = {}
 			for lulc_type in non_agricultural_points_dict:
 				lulc_type_points = non_agricultural_points_dict[lulc_type]
 				no_of_non_ag_lulc_type_points[lulc_type] = len(lulc_type_points)
 				if no_of_non_ag_lulc_type_points[lulc_type] != 0:	
 					zb = zonewise_budgets[zone_name][lulc_type] = Budget()
-					zb.AET_monsoon_end = np.sum([p.budget.AET_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-					zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-					zb.runoff_monsoon_end = np.sum([p.budget.runoff_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-					zb.runoff_crop_end = np.sum([p.budget.runoff_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-					zb.runoff_total = np.sum([p.budget.runoff_total	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-					zb.sm_monsoon_end = np.sum([p.budget.sm_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-					zb.sm_crop_end = np.sum([p.budget.sm_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-					zb.infil_monsoon_end = np.sum([p.budget.infil_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]				
-					zb.GW_rech_monsoon_end = np.sum([p.budget.GW_rech_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-					zb.GW_rech_crop_end = np.sum([p.budget.GW_rech_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]				
-					zb.GW_rech_total = np.sum([p.budget.GW_rech_total	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]				
-					zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
-					zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]
+					zb.AET_monsoon_end = np.round((np.sum([p.budget.AET_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
+					zb.AET_crop_end = np.round((np.sum([p.budget.AET_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
+					zb.runoff_monsoon_end = np.round((np.sum([p.budget.runoff_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
+					zb.runoff_crop_end = np.round((np.sum([p.budget.runoff_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
+					zb.runoff_total = np.round((np.sum([p.budget.runoff_total	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
+					zb.sm_monsoon_end = np.round((np.sum([p.budget.sm_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
+					zb.sm_crop_end = np.round((np.sum([p.budget.sm_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
+					zb.infil_monsoon_end = np.round((np.sum([p.budget.infil_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)				
+					zb.GW_rech_monsoon_end = np.round((np.sum([p.budget.GW_rech_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
+					zb.GW_rech_crop_end = np.round((np.sum([p.budget.GW_rech_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)				
+					zb.GW_rech_total = np.round((np.sum([p.budget.GW_rech_total	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)				
+					zb.PET_minus_AET_monsoon_end = np.round((np.sum([p.budget.PET_minus_AET_monsoon_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
+					zb.PET_minus_AET_crop_end = np.round((np.sum([p.budget.PET_minus_AET_crop_end	for p in lulc_type_points], 0) / no_of_non_ag_lulc_type_points[lulc_type]), 2)
 			self.zone_area_village[zone_name] ={}
 			self.zone_area_village[zone_name]['area'] = zones_layer.feature_dict[zone_id].geometry().area()/10000
 			self.zone_area_village[zone_name]['code'] = zones_layer.feature_dict[zone_id]['UNICODE']
@@ -110,20 +110,20 @@ class KharifModelOutputProcessor:
 			
 			if (no_of_fallow_points != 0):
 				zb = zonewise_budgets[zone_name]['currnet fallow'] = Budget()
-				zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.AET_monsoon_end = np.sum([p.budget.AET_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.runoff_monsoon_end = np.sum([p.budget.runoff_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.runoff_crop_end = np.sum([p.budget.runoff_crop_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.runoff_total = np.sum([p.budget.runoff_total	for p in fallow_points], 0) / no_of_fallow_points			
-				zb.sm_monsoon_end = np.sum([p.budget.sm_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.sm_crop_end = np.sum([p.budget.sm_crop_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.infil_monsoon_end = np.sum([p.budget.infil_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.GW_rech_monsoon_end = np.sum([p.budget.GW_rech_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.GW_rech_crop_end = np.sum([p.budget.GW_rech_crop_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.GW_rech_total = np.sum([p.budget.GW_rech_total	for p in fallow_points], 0) / no_of_fallow_points
-				zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points
-				zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in fallow_points], 0) / no_of_fallow_points
+				zb.AET_crop_end = np.round((np.sum([p.budget.AET_crop_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.AET_monsoon_end = np.round((np.sum([p.budget.AET_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.runoff_monsoon_end = np.round((np.sum([p.budget.runoff_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.runoff_crop_end = np.round((np.sum([p.budget.runoff_crop_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.runoff_total = np.round((np.sum([p.budget.runoff_total	for p in fallow_points], 0) / no_of_fallow_points), 2)			
+				zb.sm_monsoon_end = np.round((np.sum([p.budget.sm_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.sm_crop_end = np.round((np.sum([p.budget.sm_crop_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.infil_monsoon_end = np.round((np.sum([p.budget.infil_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.AET_crop_end = np.round((np.sum([p.budget.AET_crop_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.GW_rech_monsoon_end = np.round((np.sum([p.budget.GW_rech_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.GW_rech_crop_end = np.round((np.sum([p.budget.GW_rech_crop_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.GW_rech_total = np.round((np.sum([p.budget.GW_rech_total	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.PET_minus_AET_monsoon_end = np.round((np.sum([p.budget.PET_minus_AET_monsoon_end	for p in fallow_points], 0) / no_of_fallow_points), 2)
+				zb.PET_minus_AET_crop_end = np.round((np.sum([p.budget.PET_minus_AET_crop_end	for p in fallow_points], 0) / no_of_fallow_points) ,2)
 
 		for zone_id in  zone_points_dict_non_ag_missing_LU:
 			if(zones_layer.qgsLayer.fieldNameIndex('Zone_name') != -1):
@@ -137,19 +137,19 @@ class KharifModelOutputProcessor:
 				no_of_diif_LU_points[lulc] = len(diif_LU_points)
 				if no_of_diif_LU_points[lulc] != 0:
 					zb = zonewise_budgets[zone_name][lulc] = Budget()
-					zb.AET_monsoon_end = np.sum([p.budget.AET_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
-					zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
-					zb.runoff_monsoon_end = np.sum([p.budget.runoff_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
-					zb.runoff_crop_end = np.sum([p.budget.runoff_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
-					zb.runoff_total = np.sum([p.budget.runoff_total	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
-					zb.sm_monsoon_end = np.sum([p.budget.sm_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
-					zb.sm_crop_end = np.sum([p.budget.sm_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
-					zb.infil_monsoon_end = np.sum([p.budget.infil_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]				
-					zb.GW_rech_monsoon_end = np.sum([p.budget.GW_rech_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
-					zb.GW_rech_crop_end = np.sum([p.budget.GW_rech_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]				
-					zb.GW_rech_total = np.sum([p.budget.GW_rech_total	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]				
-					zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
-					zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]
+					zb.AET_monsoon_end = np.round((np.sum([p.budget.AET_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
+					zb.AET_crop_end = np.round((np.sum([p.budget.AET_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
+					zb.runoff_monsoon_end = np.round((np.sum([p.budget.runoff_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
+					zb.runoff_crop_end = np.round((np.sum([p.budget.runoff_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
+					zb.runoff_total = np.round((np.sum([p.budget.runoff_total	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
+					zb.sm_monsoon_end = np.round((np.sum([p.budget.sm_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
+					zb.sm_crop_end = np.round((np.sum([p.budget.sm_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
+					zb.infil_monsoon_end = np.round((np.sum([p.budget.infil_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)				
+					zb.GW_rech_monsoon_end = np.round((np.sum([p.budget.GW_rech_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
+					zb.GW_rech_crop_end = np.round((np.sum([p.budget.GW_rech_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)				
+					zb.GW_rech_total = np.round((np.sum([p.budget.GW_rech_total	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)				
+					zb.PET_minus_AET_monsoon_end = np.round((np.sum([p.budget.PET_minus_AET_monsoon_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
+					zb.PET_minus_AET_crop_end = np.round((np.sum([p.budget.PET_minus_AET_crop_end	for p in diif_LU_points], 0) / no_of_diif_LU_points[lulc]), 2)
 
 		for zone_id in  zone_points_dict_ag_missing:
 			if(zones_layer.qgsLayer.fieldNameIndex('Zone_name') != -1):
@@ -162,20 +162,20 @@ class KharifModelOutputProcessor:
 			
 			if (no_of_ag_from_non_ag_points != 0):
 				zb = zonewise_budgets[zone_name]['agricultural'] = Budget()
-				zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.AET_monsoon_end = np.sum([p.budget.AET_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.runoff_monsoon_end = np.sum([p.budget.runoff_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.runoff_crop_end = np.sum([p.budget.runoff_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.runoff_total = np.sum([p.budget.runoff_total	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points			
-				zb.sm_monsoon_end = np.sum([p.budget.sm_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.sm_crop_end = np.sum([p.budget.sm_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.infil_monsoon_end = np.sum([p.budget.infil_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.AET_crop_end = np.sum([p.budget.AET_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.GW_rech_monsoon_end = np.sum([p.budget.GW_rech_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.GW_rech_crop_end = np.sum([p.budget.GW_rech_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.GW_rech_total = np.sum([p.budget.GW_rech_total	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.PET_minus_AET_monsoon_end = np.sum([p.budget.PET_minus_AET_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
-				zb.PET_minus_AET_crop_end = np.sum([p.budget.PET_minus_AET_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points
+				zb.AET_crop_end = np.round((np.sum([p.budget.AET_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.AET_monsoon_end = np.round((np.sum([p.budget.AET_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.runoff_monsoon_end = np.round((np.sum([p.budget.runoff_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.runoff_crop_end = np.round((np.sum([p.budget.runoff_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.runoff_total = np.round((np.sum([p.budget.runoff_total	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)			
+				zb.sm_monsoon_end = np.round((np.sum([p.budget.sm_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.sm_crop_end = np.round((np.sum([p.budget.sm_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.infil_monsoon_end = np.round((np.sum([p.budget.infil_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.AET_crop_end = np.round((np.sum([p.budget.AET_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.GW_rech_monsoon_end = np.round((np.sum([p.budget.GW_rech_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.GW_rech_crop_end = np.round((np.sum([p.budget.GW_rech_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.GW_rech_total = np.round((np.sum([p.budget.GW_rech_total	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.PET_minus_AET_monsoon_end = np.round((np.sum([p.budget.PET_minus_AET_monsoon_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
+				zb.PET_minus_AET_crop_end = np.round((np.sum([p.budget.PET_minus_AET_crop_end	for p in ag_from_non_ag_points], 0) / no_of_ag_from_non_ag_points), 2)
 
 
 			#~ zb = Budget()
@@ -266,11 +266,11 @@ class KharifModelOutputProcessor:
 		)
 	
 		rows.append(['PET Monsoon End']
-			+ [crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item() for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for crop in crops]
+			+ [np.round(crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item(),2) for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for crop in crops]
 			+ [0 for ID in zonewise_budgets if 'agricultural' in zonewise_budgets[ID]	for crop in rabi_crop_names]
-			+ [crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item() for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow ]
-			+ [crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item() for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow ]
-			+ [pseudo_crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item() for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [np.round(crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item(),2) for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow ]
+			+ [np.round(crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item(),2) for ID in zonewise_budgets if 'currnet fallow' in zonewise_budgets[ID] for crop in currnet_fallow ]
+			+ [np.round(pseudo_crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item(),2) for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 		rows.append(['AET Monsoon End']
@@ -312,11 +312,11 @@ class KharifModelOutputProcessor:
 		)
 		
 		rows.append(['Post Monsoon PET']
-			+ [crop.PET_sum_cropend[self.zone_area_village[ID]['circle']].item() - crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item() for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
+			+ [np.round((crop.PET_sum_cropend[self.zone_area_village[ID]['circle']].item() - crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item()), 2) for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in crops]
 			+ [dict_rabi_crop[crop] for ID in zonewise_budgets	if 'agricultural' in zonewise_budgets[ID] for crop in rabi_crop_names]
-			+ [crop.PET_sum_cropend[self.zone_area_village[ID]['circle']].item() - crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item() for ID in zonewise_budgets	if 'currnet fallow'in zonewise_budgets[ID]  for crop in currnet_fallow ]
-			+ [crop.PET_sum_cropend[self.zone_area_village[ID]['circle']].item() - crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item() for ID in zonewise_budgets	if 'currnet fallow'in zonewise_budgets[ID]  for crop in currnet_fallow ]
-			+ [pseudo_crop.PET_sum_cropend[self.zone_area_village[ID]['circle']].item() - pseudo_crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item()	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
+			+ [np.round((crop.PET_sum_cropend[self.zone_area_village[ID]['circle']].item() - crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item()), 2) for ID in zonewise_budgets	if 'currnet fallow'in zonewise_budgets[ID]  for crop in currnet_fallow ]
+			+ [np.round((crop.PET_sum_cropend[self.zone_area_village[ID]['circle']].item() - crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item()), 2) for ID in zonewise_budgets	if 'currnet fallow'in zonewise_budgets[ID]  for crop in currnet_fallow ]
+			+ [np.round((pseudo_crop.PET_sum_cropend[self.zone_area_village[ID]['circle']].item() - pseudo_crop.PET_sum_monsoon[self.zone_area_village[ID]['circle']].item()), 2)	for ID in zonewise_budgets	for pseudo_crop in pseudo_crops if pseudo_crop.name in zonewise_budgets[ID]]
 		)
 
 
