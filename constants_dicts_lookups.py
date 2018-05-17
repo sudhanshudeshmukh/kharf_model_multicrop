@@ -193,16 +193,16 @@ dict_crop = {
 
 
 dict_crop_current_fallow = {
-	'current fallow crop':		(	[0.2]*60 + [0.3]*62 ,		0.5,	0.9		)
+	'current fallow crop':		(	[0.16]*30 + [0.1]*30 + [0.26]*31 + [0.47]*31 ,		0.5,	0.9		)
 }
 
 
 #Lookup for properties of vegetation on various LULC types : KC, depletion factor, root depth
 #	'scrub', 'scrub' and 'scrub' have been pooled together as 'scrub'
 dict_LULC_pseudo_crop =	{
-	'forest':	(	[0.3]*45 + [1.15]*60 + [0.7]*90 + [0.1]*170,	0.8,	3	),
-	'wasteland':			(	[0.5]*120 + [0.25]*60 + [0.15]*120 + [0.1]*65,	0.5,	0.5	),
-	'scrub':			(	[0.3]*30 + [0.7]*60 + [0.5]*60 + [0.2]*215,		0.6,	1.5	)
+	'forest':	(	[0.3]*45 + [1.13]*60 + [0.69]*90 + [0.1]*170,	0.8,	3	),
+	'wasteland':			(	[0.38]*120 + [0.19]*60 + [0.11]*120 + [0.08]*65,	0.5,	0.5	),
+	'scrub':			(	[0.13]*30 + [0.31]*60 + [0.22]*60 + [0.09]*215,		0.6,	1.5	)
 }
 
 
@@ -261,20 +261,20 @@ dict_crop_marathi_season ={
 #Rabi crop with their PET values
 dict_rabi_crop ={
 	'rabi_sorghum' : 425,
-	'gram' : 250,
+	'gram' : 350,
 	'rabi_maize' : 500,
-	'rabi_onion' : 350,
-	'rabi_chilly' : 800,
-	'rabi_tomato' : 400,
-	'rabi_brinjal' : 650,
-	'rabi_vegetables' : 350,
-	'rabi_cauliflower' : 350,
-	'rabi_potato' : 500,
-	'rabi_okra' : 550,
+	'rabi_onion' : 625,
+	'rabi_chilly' : 1100,
+	'rabi_tomato' : 700,
+	'rabi_brinjal' : 1000,
+	'rabi_vegetables' : 600,
+	'rabi_cauliflower' : 475,
+	'rabi_potato' : 550,
+	'rabi_okra' : 475,
 	'rabi_groundnut' : 650,
-	'rabi_sunflower' : 400,
+	'rabi_sunflower' : 425,
 	'rabi_fodder' : 350,
-	'rabi_wheat' : 500
+	'rabi_wheat' : 525
 	}
 
 #Long Kharif crops list
