@@ -343,8 +343,8 @@ class KharifModelCalculator:
 				yield i
 				i = i+step
 
-		# x_List = [633171]
-		# y_List = [2018439]
+		# x_List = [647055]
+		# y_List = [2188467]
 		# x_List = [749019.848090772]
 		# y_List = [2262579.4183734786]
 		# x_List = [743508]
@@ -376,6 +376,10 @@ class KharifModelCalculator:
 					filtered_feature_dict[polygon_id] = self.cadastral_layer.feature_dict[polygon_id]
 					break
 		self.cadastral_layer.feature_dict = filtered_feature_dict
+		index = QgsSpatialIndex()
+		for feat in filtered_feature_dict.values():
+			index.insertFeature(feat)
+		self.cadastral_layer.index = index
 	
 	def generate_output_points_for_cadastral_plots(self):
 		output_cadastral_points = []
